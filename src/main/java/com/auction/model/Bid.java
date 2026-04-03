@@ -1,5 +1,7 @@
 package com.auction.model;
 
+import com.auction.model.User.Bidder;
+
 public class Bid {
     private Bidder bidder;
     private double amount;

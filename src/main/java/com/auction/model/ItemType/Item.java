@@ -1,12 +1,16 @@
-package com.auction.model;
+package com.auction.model.ItemType;
 
-public class Item {
-    private String name;
+public abstract class Item {
+    private final String name;
     private double currentPrice;
 
     public Item(String name, double price) {
         this.name = name;
         this.currentPrice = price;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public double getCurrentPrice() {
