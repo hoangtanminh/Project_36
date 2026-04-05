@@ -25,7 +25,6 @@ public class Auction {
         startAutoClose();
     }
 
-    // 🔥 CORE: đặt giá (giữ logic cũ + thêm anti-sniping)
     public synchronized void placeBid(Bid bid) {
 
         if (!isOpen) {
