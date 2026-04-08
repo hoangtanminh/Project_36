@@ -2,11 +2,13 @@ package com.auction.model;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Auction {
+public class Auction implements Subject{
     private Item item;
     private Bid highestBid;
     private boolean isOpen;
@@ -15,6 +17,7 @@ public class Auction {
     private LocalDateTime endTime;
 
     private ScheduledExecutorService scheduler;
+    private List<Observer> observers = new ArrayList<>();
 
     public Auction(Item item, LocalDateTime startTime, LocalDateTime endTime) {
         this.item = item;
@@ -46,6 +49,8 @@ public class Auction {
         item.setCurrentPrice(bid.getAmount());
         highestBid = bid;
 
+        notifyObservers();
+
         System.out.println("New highest bid: " + bid.getAmount()
                 + " by " + bid.getBidder().getName());
     }
@@ -76,6 +81,20 @@ public class Auction {
 
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
+        }
+    }
+    @Override
+    public void addObserver(Observer observer){
+        observers.add(observer);
+    }
+    @Override
+    public void removeObserver(Observer observer){
+        observers.remove(observer);
+    }
+    @Override
+    public void notifyObservers() {
+        for (Observer observer : observers) {
+            observer.update(this);
         }
     }
 
