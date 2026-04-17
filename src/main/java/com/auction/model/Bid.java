@@ -3,8 +3,8 @@ package com.auction.model;
 import com.auction.model.User.Bidder;
 
 public class Bid {
-    private Bidder bidder;
-    private double amount;
+    private final Bidder bidder;
+    private final double amount;
 
     public Bid(Bidder bidder, double amount) {
         this.bidder = bidder;
