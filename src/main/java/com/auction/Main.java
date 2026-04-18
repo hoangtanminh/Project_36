@@ -39,7 +39,7 @@ public class Main {
         auction.finishAuction();
         auction.payAuction();
 
-        System.out.println("Final highest bid: " + auction.getHighestBid().getAmount());
+        System.out.println("Final highest bid: " + auction.getHighestBid().getAmount()+" by " + auction.getHighestBid().getBidder().getName());
         System.out.println("Auction state: " + auction.getState());
     }
 }
