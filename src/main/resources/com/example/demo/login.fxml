@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.demo.LoginController" 
+      spacing="15" alignment="CENTER"
+      style="-fx-padding: 40; -fx-background-color: #f0f0f0;">
+
+    <Label text="HỆ THỐNG ĐẤU GIÁ"
+           style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+
+    <TextField fx:id="usernameField"
+               promptText="Tên đăng nhập"
+               prefWidth="250"/>
+
+    <HBox spacing="5" alignment="CENTER">
+        <PasswordField fx:id="passwordField"
+                       promptText="Mật khẩu"
+                       prefWidth="215"/>
+        <TextField fx:id="passwordVisible"
+                   promptText="Mật khẩu"
+                   prefWidth="215"
+                   visible="false"
+                   managed="false"/>
+        <Button fx:id="toggleLoginPass"
+                text="👁"
+                onAction="#togglePassword"
+                style="-fx-background-color: transparent; -fx-cursor: hand; -fx-font-size: 14px;"/>
+    </HBox>
+
+    <Button fx:id="loginBtn"
+            text="Đăng nhập"
+            prefWidth="250"
+            onAction="#handleLogin"/>
+
+    <!-- 👇 NÚT SIGN UP -->
+    <Button text="Chưa có tài khoản? Sign Up"
+            onAction="#goToRegister"
+            style="-fx-background-color: transparent; -fx-text-fill: blue;"/>
+
+    <Label fx:id="errorLabel"
+           style="-fx-text-fill: red;"/>
+
+</VBox>
