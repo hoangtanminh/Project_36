@@ -6,7 +6,7 @@ public class UserService {
 
     private static final String URL = "jdbc:sqlite:auction.db";
 
-    // 🧱 1. Thêm user (SIGN UP)
+    //  1. Thêm user (SIGN UP)
     public static void insertUser(String username, String password) {
         try {
             Connection conn = DriverManager.getConnection(URL);
@@ -26,7 +26,7 @@ public class UserService {
         }
     }
 
-    // 🧱 2. Check username đã tồn tại chưa
+    //  2. Check username đã tồn tại chưa
     public static boolean exists(String username) {
         try {
             Connection conn = DriverManager.getConnection(URL);
@@ -47,7 +47,7 @@ public class UserService {
         return false;
     }
 
-    // 🧱 3. Login
+    //  3. Login
     public static boolean login(String username, String password) {
         try {
             Connection conn = DriverManager.getConnection(URL);
