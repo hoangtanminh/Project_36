@@ -1,5 +1,8 @@
 package com.auction.ui;
 
+import com.auction.exception.AuthenticationException;
+import com.auction.service.auth.AuthenticationService;
+import com.auction.service.auth.SimpleAuthenticationService;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,6 +20,7 @@ import javafx.stage.Stage;
 
 public class AuctionFxApp extends Application {
     private Stage stage;
+    private final AuthenticationService authenticationService = new SimpleAuthenticationService();
 
     @Override
     public void start(Stage primaryStage) {
@@ -42,14 +46,14 @@ public class AuctionFxApp extends Application {
             String username = usernameField.getText().trim();
             String password = passwordField.getText().trim();
 
-            if (username.isEmpty() || password.isEmpty()) {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Vui long nhap day du username/password");
-                alert.setHeaderText("Thong tin chua hop le");
+            try {
+                authenticationService.authenticate(username, password);
+                showListScreen(username);
+            } catch (AuthenticationException ex) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, ex.getMessage());
+                alert.setHeaderText("Dang nhap that bai");
                 alert.showAndWait();
-                return;
             }
-
-            showListScreen(username);
         });
 
         VBox loginLayout = new VBox(12, title, usernameField, passwordField, loginButton);
