@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.demo.DashboardController"
+      style="-fx-background-color: #1e1e1e;">
+
+    <HBox spacing="10" alignment="CENTER_LEFT"
+          style="-fx-background-color: #2d2d2d; -fx-padding: 14 20 14 20;">
+        <Label text="Hệ thống Đấu Giá"
+               style="-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="userLabel"
+               style="-fx-text-fill: #aaaaaa; -fx-font-size: 13px;"/>
+        <Button fx:id="logoutBtn" text="Đăng xuất"
+                onAction="#handleLogout"
+                style="-fx-background-color: #c0392b; -fx-text-fill: white;
+                       -fx-font-size: 12px; -fx-cursor: hand; -fx-background-radius: 6;"/>
+    </HBox>
+
+    <HBox spacing="8" style="-fx-padding: 12 20 8 20;">
+        <Button fx:id="btnAll" text="Tất cả" onAction="#filterAll"
+                style="-fx-background-color: #7f77dd; -fx-text-fill: white;
+                       -fx-cursor: hand; -fx-background-radius: 20;"/>
+        <Button fx:id="btnOpen" text="Đang diễn ra" onAction="#filterOpen"
+                style="-fx-background-color: #3d3d3d; -fx-text-fill: white;
+                       -fx-cursor: hand; -fx-background-radius: 20;"/>
+        <Button fx:id="btnClosed" text="Đã kết thúc" onAction="#filterClosed"
+                style="-fx-background-color: #3d3d3d; -fx-text-fill: white;
+                       -fx-cursor: hand; -fx-background-radius: 20;"/>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background: #1e1e1e; -fx-background-color: #1e1e1e;">
+        <GridPane fx:id="gridPane" hgap="15" vgap="15"
+                  style="-fx-padding: 10 20 20 20;"/>
+    </ScrollPane>
+
+</VBox>
