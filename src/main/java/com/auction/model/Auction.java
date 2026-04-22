@@ -1,5 +1,6 @@
 package com.auction.model;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,31 +11,54 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.auction.model.ItemType.Item;
+import com.auction.model.validation.BidValidationPolicy;
+import com.auction.model.validation.DefaultBidValidationPolicy;
 
 public class Auction {
     private final Item item;
-    private Bid highestBid;
-    private AuctionState state;
+    private volatile Bid highestBid;
+    private volatile AuctionState state;
 
     private final LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private volatile LocalDateTime endTime;
 
     private ScheduledExecutorService scheduler;
     private final ReentrantLock bidLock = new ReentrantLock();
     private final List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
 
+    private final BidValidationPolicy bidValidationPolicy;
+    private final Clock clock;
+
     public Auction(Item item, LocalDateTime startTime, LocalDateTime endTime) {
+        this(item, startTime, endTime, new DefaultBidValidationPolicy(), Clock.systemDefaultZone());
+    }
+
+    public Auction(
+            Item item,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            BidValidationPolicy bidValidationPolicy,
+            Clock clock
+    ) {
         if (item == null) {
             throw new IllegalArgumentException("Item is required");
         }
         if (startTime == null || endTime == null || !endTime.isAfter(startTime)) {
             throw new IllegalArgumentException("Invalid auction time range");
         }
+        if (bidValidationPolicy == null) {
+            throw new IllegalArgumentException("BidValidationPolicy is required");
+        }
+        if (clock == null) {
+            throw new IllegalArgumentException("Clock is required");
+        }
 
         this.item = item;
         this.startTime = startTime;
         this.endTime = endTime;
         this.state = AuctionState.OPEN;
+        this.bidValidationPolicy = bidValidationPolicy;
+        this.clock = clock;
     }
 
     public synchronized void addObserver(AuctionObserver observer) {
@@ -53,7 +77,7 @@ public class Auction {
             if (state != AuctionState.OPEN) {
                 throw new IllegalStateException("Only OPEN auction can move to RUNNING");
             }
-            if (LocalDateTime.now().isBefore(startTime)) {
+            if (now().isBefore(startTime)) {
                 throw new IllegalStateException("Cannot start auction before start time");
             }
             state = AuctionState.RUNNING;
@@ -66,9 +90,9 @@ public class Auction {
     public void placeBid(Bid bid) {
         bidLock.lock();
         try {
-            validateBid(bid);
+            bidValidationPolicy.validate(state, now(), startTime, endTime, item.getCurrentPrice(), bid);
 
-            long secondsLeft = Duration.between(LocalDateTime.now(), endTime).getSeconds();
+            long secondsLeft = Duration.between(now(), endTime).getSeconds();
             if (secondsLeft <= 10) {
                 endTime = endTime.plusSeconds(30);
                 restartScheduler();
@@ -87,25 +111,6 @@ public class Auction {
         notifyNewBid(bid);
     }
 
-    private void validateBid(Bid bid) {
-        if (bid == null || bid.getBidder() == null) {
-            throw new IllegalArgumentException("Bid and bidder are required");
-        }
-        if (state != AuctionState.RUNNING) {
-            throw new IllegalStateException("Auction is not running");
-        }
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(startTime)) {
-            throw new IllegalStateException("Auction has not started");
-        }
-        if (!now.isBefore(endTime)) {
-            throw new IllegalStateException("Auction already ended");
-        }
-        if (bid.getAmount() <= item.getCurrentPrice()) {
-            throw new IllegalArgumentException("Invalid bid: must be higher than current price");
-        }
-    }
-
     private synchronized void notifyNewBid(Bid bid) {
         for (AuctionObserver observer : observers) {
             observer.onNewBid(this, bid);
@@ -115,7 +120,7 @@ public class Auction {
     private void startAutoClose() {
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        long delay = Duration.between(LocalDateTime.now(), endTime).toMillis();
+        long delay = Duration.between(now(), endTime).toMillis();
 
         if (delay <= 0) {
             finishAuction();
@@ -180,11 +185,11 @@ public class Auction {
         }
     }
 
-    public synchronized AuctionState getState() {
+    public AuctionState getState() {
         return state;
     }
 
-    public synchronized Bid getHighestBid() {
+    public Bid getHighestBid() {
         return highestBid;
     }
 
@@ -203,5 +208,9 @@ public class Auction {
 
     public LocalDateTime getEndTime() {
         return endTime;
+    }
+
+    private LocalDateTime now() {
+        return LocalDateTime.now(clock);
     }
 }
