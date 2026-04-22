@@ -28,7 +28,7 @@ public class LoginController {
     private void handleLogin() throws Exception {
 
         String username = usernameField.getText();
-        String password = passShown ? passwordVisible.getText() : passwordField.getText();
+        String password = passShown ? passwordVisible.getText() : passwordField.getText();   // nếu passshwon = true thì lấy từ passwordVisible không thì lầy từ pwField
 
         if (UserService.login(username, password)) {
 
@@ -36,7 +36,7 @@ public class LoginController {
                     getClass().getResource("/com/example/demo/dashboard.fxml")
             );
 
-            Parent root = loader.load();
+            Parent root = loader.load();        //load giao diện dashboard
 
             DashboardController controller = loader.getController();
 

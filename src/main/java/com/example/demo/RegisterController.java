@@ -73,7 +73,7 @@ public class RegisterController {
     @FXML
     private void goToLogin() throws Exception {
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/com/example/demo/login.fxml")
+                getClass().getResource("/com/example/demo/login.fxml")      //load lại hàm login
         );
         Stage stage = (Stage) backBtn.getScene().getWindow();
         stage.setScene(new Scene(loader.load(), 400, 350));

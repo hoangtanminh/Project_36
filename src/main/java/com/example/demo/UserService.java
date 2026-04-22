@@ -50,16 +50,16 @@ public class UserService {
     //  3. Login
     public static boolean login(String username, String password) {
         try {
-            Connection conn = DriverManager.getConnection(URL);
+            Connection conn = DriverManager.getConnection(URL);     //connect với database
 
             PreparedStatement ps = conn.prepareStatement(
                     "SELECT * FROM users WHERE username=? AND password=?"
             );
 
-            ps.setString(1, username);
+            ps.setString(1, username);//gán cho ?
             ps.setString(2, password);
 
-            ResultSet rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery();   //lấy dữ liệu từ Dbase
 
             return rs.next(); // có user = login OK
 
