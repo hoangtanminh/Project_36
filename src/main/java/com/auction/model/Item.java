@@ -23,8 +23,7 @@ public abstract class Item {
         return name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getDescription() {return description;
     }
 
     public double getStartingPrice() {

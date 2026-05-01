@@ -3,62 +3,64 @@ package com.auction.model;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class Auction implements Subject{
-    private Item item;
+public class Auction implements Subject {
+
+    private final String auctionId;
+    private final Item item;
     private Bid highestBid;
-    private boolean isOpen;
+    private AuctionStatus status;
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-
+    private final LocalDateTime startTime;
+    private volatile LocalDateTime endTime;
     private ScheduledExecutorService scheduler;
-    private List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers = new CopyOnWriteArrayList<>();
+    private final List<BidTransaction> bidHistory = new ArrayList<>();
 
-    public Auction(Item item, LocalDateTime startTime, LocalDateTime endTime) {
+    public Auction(String auctionId, Item item, LocalDateTime startTime, LocalDateTime endTime) {
+        this.auctionId = auctionId;
         this.item = item;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.isOpen = true;
-
+        this.status = AuctionStatus.OPEN;
         startAutoClose();
     }
 
     public synchronized void placeBid(Bid bid) {
-
-        if (!isOpen) {
-            throw new RuntimeException("Auction is closed");
+        if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
+            throw new IllegalStateException("Auction is not open for bidding");
         }
 
         if (bid.getAmount() <= item.getCurrentPrice()) {
-            throw new RuntimeException("Invalid bid: must be higher than current price");
+            throw new IllegalArgumentException("Bid must be higher than current price: " + item.getCurrentPrice());
         }
+
 
         long secondsLeft = Duration.between(LocalDateTime.now(), endTime).getSeconds();
         if (secondsLeft <= 10) {
             endTime = endTime.plusSeconds(30);
-            System.out.println("Auction extended by 30 seconds!");
-
+            System.out.println("Auction extended by 30 seconds! New end time: " + endTime);
             restartScheduler();
         }
 
         item.setCurrentPrice(bid.getAmount());
         highestBid = bid;
-
+        status = AuctionStatus.RUNNING;
+        bidHistory.add(new BidTransaction(auctionId, bid));
         notifyObservers();
 
-        System.out.println("New highest bid: " + bid.getAmount()
-                + " by " + bid.getBidder().getName());
+        System.out.println("New highest bid: " + bid.getAmount() + " by " + bid.getBidder().getName());
     }
+
     private void startAutoClose() {
         scheduler = Executors.newSingleThreadScheduledExecutor();
-
         long delay = Duration.between(LocalDateTime.now(), endTime).toMillis();
-
         if (delay <= 0) {
             closeAuction();
             return;
@@ -76,26 +78,54 @@ public class Auction implements Subject{
         startAutoClose();
     }
 
-    public void closeAuction() {
-        isOpen = false;
 
+    public synchronized void closeAuction() {
+        if (status == AuctionStatus.FINISHED || status == AuctionStatus.CANCELED) {
+            return;
+        }
+        status = AuctionStatus.FINISHED;
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
         }
+        notifyObservers();
     }
+
+    public synchronized void cancelAuction() {
+        status = AuctionStatus.CANCELED;
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+        }
+        notifyObservers();
+    }
+
+    public synchronized void markPaid() {
+        if (status == AuctionStatus.FINISHED) {
+            status = AuctionStatus.PAID;
+            notifyObservers();
+        }
+    }
+
     @Override
-    public void addObserver(Observer observer){
+    public void addObserver(Observer observer) {
         observers.add(observer);
     }
+
     @Override
-    public void removeObserver(Observer observer){
+    public void removeObserver(Observer observer) {
         observers.remove(observer);
     }
+
     @Override
     public void notifyObservers() {
         for (Observer observer : observers) {
             observer.update(this);
         }
+    }
+
+
+
+    public String getAuctionId() {
+        return auctionId;
     }
 
     public Bid getHighestBid() {
@@ -106,8 +136,12 @@ public class Auction implements Subject{
         return item;
     }
 
+    public AuctionStatus getStatus() {
+        return status;
+    }
+
     public boolean isOpen() {
-        return isOpen;
+        return status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING;
     }
 
     public LocalDateTime getStartTime() {
@@ -116,5 +150,10 @@ public class Auction implements Subject{
 
     public LocalDateTime getEndTime() {
         return endTime;
+    }
+
+
+    public List<BidTransaction> getBidHistory() {
+        return Collections.unmodifiableList(bidHistory);
     }
 }
