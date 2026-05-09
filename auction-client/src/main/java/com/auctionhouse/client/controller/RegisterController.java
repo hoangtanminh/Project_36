@@ -1,3 +1,4 @@
+//register
 package com.auctionhouse.client.controller;
 
 import com.auctionhouse.client.service.AuctionClientService;

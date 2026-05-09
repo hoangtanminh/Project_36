@@ -1,3 +1,4 @@
+//AuctionClientApp
 package com.auctionhouse.client;
 
 import com.auctionhouse.client.service.AuctionClientService;

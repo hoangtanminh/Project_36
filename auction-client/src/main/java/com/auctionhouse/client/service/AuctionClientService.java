@@ -1,3 +1,4 @@
+//service
 package com.auctionhouse.client.service;
 
 import com.auctionhouse.shared.enums.CommandType;
