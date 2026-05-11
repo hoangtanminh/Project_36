@@ -7,6 +7,7 @@ import com.auction.server.service.AuctionService;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -36,8 +37,14 @@ public final class AuctionServer implements AutoCloseable {
         System.out.println("Auction server listening on port " + port);
 
         while (running) {
-            Socket socket = serverSocket.accept();
-            clientPool.submit(new ClientSession(socket, authenticationService, auctionService, eventPublisher));
+            try {
+                Socket socket = serverSocket.accept();
+                clientPool.submit(new ClientSession(socket, authenticationService, auctionService, eventPublisher));
+            } catch (SocketException exception) {
+                if (running) {
+                    throw exception;
+                }
+            }
         }
     }
 

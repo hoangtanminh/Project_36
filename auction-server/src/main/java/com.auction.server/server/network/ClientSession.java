@@ -17,6 +17,7 @@ import com.auction.shared.protocol.ClientRequest;
 import com.auction.shared.protocol.CreateAuctionRequest;
 import com.auction.shared.protocol.DashboardRequest;
 import com.auction.shared.protocol.LoginRequest;
+import com.auction.shared.protocol.RegisterRequest;
 import com.auction.shared.protocol.ServerResponse;
 import com.auction.shared.protocol.UpdateAuctionRequest;
 
@@ -82,15 +83,17 @@ public final class ClientSession implements Runnable, AuctionEventListener {
         send(response);
     }
 
+    // Dieu phoi request tu client den dung service/phuong thuc xu ly.
     private void handleRequest(ClientRequest<?> request) {
         CommandType commandType = request.getCommandType();
-        if (commandType != CommandType.LOGIN && authenticatedUser == null) {
+        if (commandType != CommandType.LOGIN && commandType != CommandType.REGISTER && authenticatedUser == null) {
             send(ServerResponse.error("Please login first."));
             return;
         }
 
         switch (commandType) {
             case LOGIN -> handleLogin((LoginRequest) request.getPayload());
+            case REGISTER -> handleRegister((RegisterRequest) request.getPayload());
             case LOAD_DASHBOARD -> handleDashboard((DashboardRequest) request.getPayload());
             case LOAD_AUCTION_DETAILS -> handleAuctionSelection((AuctionSelectionRequest) request.getPayload());
             case SUBSCRIBE_AUCTION -> handleSubscribe((AuctionSubscriptionRequest) request.getPayload());
@@ -106,13 +109,21 @@ public final class ClientSession implements Runnable, AuctionEventListener {
     }
 
     private void handleLogin(LoginRequest payload) {
-        authenticatedUser = authenticationService.login(payload.username());
-        UserView view = auctionService.loadDashboard(payload.username()).currentUser();
+        authenticatedUser = authenticationService.login(payload.username(), payload.password());
+        UserView view = auctionService.loadDashboard(authenticatedUser.getId()).currentUser();
         send(ServerResponse.success("Login successful.", view));
     }
 
+    // Register tra ve UserView de client co the hien thi ket qua ngay tren man hinh dang ky.
+    private void handleRegister(RegisterRequest payload) {
+        User registeredUser = authenticationService.register(payload);
+        UserView view = auctionService.loadDashboard(registeredUser.getId()).currentUser();
+        send(ServerResponse.success("Account created successfully.", view));
+    }
+
     private void handleDashboard(DashboardRequest payload) {
-        DashboardView dashboard = auctionService.loadDashboard(payload.userId());
+        DashboardRequest normalizedRequest = payload.withUserId(authenticatedUser.getId());
+        DashboardView dashboard = auctionService.loadDashboard(normalizedRequest.userId());
         send(ServerResponse.success("Dashboard loaded.", dashboard));
     }
 
@@ -122,43 +133,51 @@ public final class ClientSession implements Runnable, AuctionEventListener {
     }
 
     private void handleSubscribe(AuctionSubscriptionRequest payload) {
-        eventPublisher.subscribeToAuction(payload.auctionId(), this);
-        AuctionView auction = auctionService.loadAuction(payload.auctionId());
+        AuctionSubscriptionRequest normalizedRequest = payload.withViewerId(authenticatedUser.getId());
+        eventPublisher.subscribeToAuction(normalizedRequest.auctionId(), this);
+        AuctionView auction = auctionService.loadAuction(normalizedRequest.auctionId());
         send(ServerResponse.success("Subscribed to auction.", auction));
     }
 
     private void handleBid(BidRequest payload) {
-        AuctionView auction = auctionService.placeBid(payload);
+        BidRequest normalizedRequest = payload.withBidderId(authenticatedUser.getId());
+        AuctionView auction = auctionService.placeBid(normalizedRequest);
         send(ServerResponse.success("Bid accepted.", auction));
     }
 
     private void handleCreateAuction(CreateAuctionRequest payload) {
-        AuctionView auction = auctionService.createAuction(payload);
+        CreateAuctionRequest normalizedRequest = payload.withSellerId(authenticatedUser.getId());
+        AuctionView auction = auctionService.createAuction(normalizedRequest);
         send(ServerResponse.success("Auction created.", auction));
     }
 
     private void handleUpdateAuction(UpdateAuctionRequest payload) {
-        AuctionView auction = auctionService.updateAuction(payload);
+        UpdateAuctionRequest normalizedRequest = payload.withSellerId(authenticatedUser.getId());
+        AuctionView auction = auctionService.updateAuction(normalizedRequest);
         send(ServerResponse.success("Auction updated.", auction));
     }
 
     private void handleDeleteAuction(AuctionActionRequest payload) {
-        auctionService.deleteAuction(payload);
+        AuctionActionRequest normalizedRequest = payload.withActorId(authenticatedUser.getId());
+        auctionService.deleteAuction(normalizedRequest);
         send(ServerResponse.success("Auction deleted.", "deleted"));
     }
 
     private void handleFinishAuction(AuctionActionRequest payload) {
-        AuctionView auction = auctionService.finishAuction(payload);
+        AuctionActionRequest normalizedRequest = payload.withActorId(authenticatedUser.getId());
+        AuctionView auction = auctionService.finishAuction(normalizedRequest);
         send(ServerResponse.success("Auction finished.", auction));
     }
 
     private void handleMarkPaid(AuctionActionRequest payload) {
-        AuctionView auction = auctionService.markPaid(payload);
+        AuctionActionRequest normalizedRequest = payload.withActorId(authenticatedUser.getId());
+        AuctionView auction = auctionService.markPaid(normalizedRequest);
         send(ServerResponse.success("Auction marked paid.", auction));
     }
 
     private void handleCancelAuction(AuctionActionRequest payload) {
-        AuctionView auction = auctionService.cancelAuction(payload);
+        AuctionActionRequest normalizedRequest = payload.withActorId(authenticatedUser.getId());
+        AuctionView auction = auctionService.cancelAuction(normalizedRequest);
         send(ServerResponse.success("Auction canceled.", auction));
     }
 

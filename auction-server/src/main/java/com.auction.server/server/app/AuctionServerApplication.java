@@ -25,7 +25,10 @@ public final class AuctionServerApplication {
         AuthenticationService authenticationService = new AuthenticationService(userDao);
 
         try (AuctionServer server = new AuctionServer(5050, authenticationService, auctionService, eventPublisher)) {
+            Runtime.getRuntime().addShutdownHook(new Thread(auctionService::shutdown, "auction-server-shutdown"));
             server.start();
+        } finally {
+            auctionService.shutdown();
         }
     }
 }

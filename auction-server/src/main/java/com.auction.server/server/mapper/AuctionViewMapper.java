@@ -6,8 +6,10 @@ import com.auction.model.Auction;
 import com.auction.model.Bid;
 import com.auction.model.BidTransaction;
 import com.auction.model.Bidder;
+import com.auction.model.Clothing;
 import com.auction.model.Electronics;
 import com.auction.model.Item;
+import com.auction.model.ItemType;
 import com.auction.model.Seller;
 import com.auction.model.User;
 import com.auction.server.domain.ManagedAuction;
@@ -57,12 +59,14 @@ public final class AuctionViewMapper {
     }
 
     private ItemView toItemView(Item item) {
-        String type = item.getClass().getSimpleName();
+        String type = formatItemType(item.getItemType());
         String detail;
         if (item instanceof Art art) {
             detail = "Artist: " + art.getArtist();
         } else if (item instanceof Electronics electronics) {
             detail = "Warranty: " + electronics.getWarrantyMonths() + " months";
+        } else if (item instanceof Clothing clothing) {
+            detail = "Size: " + clothing.getSizeLabel();
         } else {
             detail = "General item";
         }
@@ -75,6 +79,11 @@ public final class AuctionViewMapper {
                 type,
                 detail
         );
+    }
+
+    private String formatItemType(ItemType itemType) {
+        String lowerCase = itemType.name().toLowerCase();
+        return Character.toUpperCase(lowerCase.charAt(0)) + lowerCase.substring(1);
     }
 
     private BidView toBidView(Bid bid) {
