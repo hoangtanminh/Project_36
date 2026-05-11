@@ -1,0 +1,186 @@
+package com.auction.server.network;
+
+import com.auction.model.User;
+import com.auction.server.event.AuctionEventListener;
+import com.auction.server.event.AuctionEventPublisher;
+import com.auction.server.service.AuthenticationService;
+import com.auction.server.service.AuctionService;
+import com.auction.shared.dto.AuctionView;
+import com.auction.shared.dto.DashboardView;
+import com.auction.shared.dto.UserView;
+import com.auction.shared.enums.CommandType;
+import com.auction.shared.protocol.AuctionActionRequest;
+import com.auction.shared.protocol.AuctionSelectionRequest;
+import com.auction.shared.protocol.AuctionSubscriptionRequest;
+import com.auction.shared.protocol.BidRequest;
+import com.auction.shared.protocol.ClientRequest;
+import com.auction.shared.protocol.CreateAuctionRequest;
+import com.auction.shared.protocol.DashboardRequest;
+import com.auction.shared.protocol.LoginRequest;
+import com.auction.shared.protocol.ServerResponse;
+import com.auction.shared.protocol.UpdateAuctionRequest;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.net.SocketException;
+
+public final class ClientSession implements Runnable, AuctionEventListener {
+    private final Socket socket;
+    private final AuthenticationService authenticationService;
+    private final AuctionService auctionService;
+    private final AuctionEventPublisher eventPublisher;
+    private volatile boolean running = true;
+    private User authenticatedUser;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
+
+    public ClientSession(
+            Socket socket,
+            AuthenticationService authenticationService,
+            AuctionService auctionService,
+            AuctionEventPublisher eventPublisher) {
+        this.socket = socket;
+        this.authenticationService = authenticationService;
+        this.auctionService = auctionService;
+        this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    public void run() {
+        eventPublisher.subscribeGlobal(this);
+        try {
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            outputStream.flush();
+            inputStream = new ObjectInputStream(socket.getInputStream());
+
+            while (running) {
+                Object value = inputStream.readObject();
+                if (!(value instanceof ClientRequest<?> request)) {
+                    send(ServerResponse.error("Unsupported request payload."));
+                    continue;
+                }
+                handleRequest(request);
+            }
+        } catch (EOFException | SocketException ignored) {
+            closeQuietly();
+        } catch (Exception exception) {
+            send(ServerResponse.error(exception.getMessage()));
+            closeQuietly();
+        } finally {
+            closeQuietly();
+        }
+    }
+
+    @Override
+    public void onAuctionEvent(ServerResponse<?> response) {
+        if (authenticatedUser == null || !running) {
+            return;
+        }
+        send(response);
+    }
+
+    private void handleRequest(ClientRequest<?> request) {
+        CommandType commandType = request.getCommandType();
+        if (commandType != CommandType.LOGIN && authenticatedUser == null) {
+            send(ServerResponse.error("Please login first."));
+            return;
+        }
+
+        switch (commandType) {
+            case LOGIN -> handleLogin((LoginRequest) request.getPayload());
+            case LOAD_DASHBOARD -> handleDashboard((DashboardRequest) request.getPayload());
+            case LOAD_AUCTION_DETAILS -> handleAuctionSelection((AuctionSelectionRequest) request.getPayload());
+            case SUBSCRIBE_AUCTION -> handleSubscribe((AuctionSubscriptionRequest) request.getPayload());
+            case PLACE_BID -> handleBid((BidRequest) request.getPayload());
+            case CREATE_AUCTION -> handleCreateAuction((CreateAuctionRequest) request.getPayload());
+            case UPDATE_AUCTION -> handleUpdateAuction((UpdateAuctionRequest) request.getPayload());
+            case DELETE_AUCTION -> handleDeleteAuction((AuctionActionRequest) request.getPayload());
+            case FINISH_AUCTION -> handleFinishAuction((AuctionActionRequest) request.getPayload());
+            case MARK_PAID -> handleMarkPaid((AuctionActionRequest) request.getPayload());
+            case CANCEL_AUCTION -> handleCancelAuction((AuctionActionRequest) request.getPayload());
+            case LOGOUT -> running = false;
+        }
+    }
+
+    private void handleLogin(LoginRequest payload) {
+        authenticatedUser = authenticationService.login(payload.username());
+        UserView view = auctionService.loadDashboard(payload.username()).currentUser();
+        send(ServerResponse.success("Login successful.", view));
+    }
+
+    private void handleDashboard(DashboardRequest payload) {
+        DashboardView dashboard = auctionService.loadDashboard(payload.userId());
+        send(ServerResponse.success("Dashboard loaded.", dashboard));
+    }
+
+    private void handleAuctionSelection(AuctionSelectionRequest payload) {
+        AuctionView auction = auctionService.loadAuction(payload.auctionId());
+        send(ServerResponse.success("Auction loaded.", auction));
+    }
+
+    private void handleSubscribe(AuctionSubscriptionRequest payload) {
+        eventPublisher.subscribeToAuction(payload.auctionId(), this);
+        AuctionView auction = auctionService.loadAuction(payload.auctionId());
+        send(ServerResponse.success("Subscribed to auction.", auction));
+    }
+
+    private void handleBid(BidRequest payload) {
+        AuctionView auction = auctionService.placeBid(payload);
+        send(ServerResponse.success("Bid accepted.", auction));
+    }
+
+    private void handleCreateAuction(CreateAuctionRequest payload) {
+        AuctionView auction = auctionService.createAuction(payload);
+        send(ServerResponse.success("Auction created.", auction));
+    }
+
+    private void handleUpdateAuction(UpdateAuctionRequest payload) {
+        AuctionView auction = auctionService.updateAuction(payload);
+        send(ServerResponse.success("Auction updated.", auction));
+    }
+
+    private void handleDeleteAuction(AuctionActionRequest payload) {
+        auctionService.deleteAuction(payload);
+        send(ServerResponse.success("Auction deleted.", "deleted"));
+    }
+
+    private void handleFinishAuction(AuctionActionRequest payload) {
+        AuctionView auction = auctionService.finishAuction(payload);
+        send(ServerResponse.success("Auction finished.", auction));
+    }
+
+    private void handleMarkPaid(AuctionActionRequest payload) {
+        AuctionView auction = auctionService.markPaid(payload);
+        send(ServerResponse.success("Auction marked paid.", auction));
+    }
+
+    private void handleCancelAuction(AuctionActionRequest payload) {
+        AuctionView auction = auctionService.cancelAuction(payload);
+        send(ServerResponse.success("Auction canceled.", auction));
+    }
+
+    private synchronized void send(ServerResponse<?> response) {
+        if (outputStream == null || !running) {
+            return;
+        }
+        try {
+            outputStream.writeObject(response);
+            outputStream.flush();
+            outputStream.reset();
+        } catch (IOException ignored) {
+            closeQuietly();
+        }
+    }
+
+    private void closeQuietly() {
+        running = false;
+        eventPublisher.unsubscribe(this);
+        try {
+            socket.close();
+        } catch (IOException ignored) {
+        }
+    }
+}
