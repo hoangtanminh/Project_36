@@ -7,11 +7,11 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-class AuctionTest {
+class PlaceBidLowerThanCurrentPriceTest extends AuctionTestBase {
 
     @Test
     void placeBid_lowerThanCurrentPrice() {
-        Item item = new Art("A01", "Mona Lisa", "Painting", 1_000.0, "Leonardo da Vinci");
+        Item item = createArt("A01", "Mona Lisa", 1_000.0);
         Auction auction = new Auction(
                 "A01",
                 item,
