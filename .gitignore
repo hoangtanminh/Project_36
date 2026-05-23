@@ -1,0 +1,14 @@
+# Runtime artifacts for auction-server
+auction-server/data/auction.db
+auction-server/data/users.json
+auction-server/data/active-port.txt
+auction-server/tmp-users.bin
+auction-server/tmp-users.bin.corrupt-*.bak
+auction-server/tmp-users.json
+
+# Maven target
+/**/target/
+
+# IntelliJ
+*.iml
+.idea/
