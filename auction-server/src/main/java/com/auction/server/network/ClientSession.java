@@ -202,4 +202,4 @@ public final class ClientSession implements Runnable, AuctionEventListener {
         } catch (IOException ignored) {
         }
     }
-}
+}// session giong hander
