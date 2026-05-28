@@ -78,6 +78,16 @@ public class Auction implements Subject {
         startAutoClose();
     }
 
+    /**
+     * Shutdown the internal scheduler used for auto-closing the auction.
+     * Exposed to allow external management of scheduler lifecycle.
+     */
+    public void shutdownScheduler() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
+    }
+
 
     public synchronized void closeAuction() {
         if (status == AuctionStatus.FINISHED || status == AuctionStatus.CANCELED) {

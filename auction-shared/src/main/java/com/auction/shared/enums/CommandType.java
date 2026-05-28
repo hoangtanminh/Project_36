@@ -12,6 +12,7 @@ public enum CommandType implements Serializable {
     CREATE_AUCTION,
     UPDATE_AUCTION,
     DELETE_AUCTION,
+    CHANGE_AUCTION_STATUS,
     FINISH_AUCTION,
     MARK_PAID,
     CANCEL_AUCTION,

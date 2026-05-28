@@ -12,7 +12,6 @@ import com.auctionhouse.shared.model.User;
 import com.auctionhouse.shared.protocol.AuctionSubscriptionRequest;
 import com.auctionhouse.shared.protocol.BidRequest;
 import com.auctionhouse.shared.protocol.ServerResponse;
-import com.auctionhouse.shared.enums.AuctionEventType;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

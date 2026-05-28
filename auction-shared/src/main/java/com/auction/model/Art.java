@@ -19,4 +19,9 @@ public class Art extends Item {
                 + " | Price: " + getCurrentPrice()
                 + " | Artist: " + artist);
     }
+
+    @Override
+    public ItemType getItemType() {
+        return ItemType.ART;
+    }
 }

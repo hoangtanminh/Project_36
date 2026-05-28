@@ -20,4 +20,10 @@ public record UserView(
     public UserRole getRole() {
         return role;
     }
+
+    // compatibility aliases used by client
+    public String getDisplayName() { return name; }
+    public String getRoleLabel() { return role == null ? "" : role.name(); }
+    public String getUsername() { return id; }
+    public double getBalance() { return 0.0; }
 }

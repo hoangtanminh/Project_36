@@ -19,4 +19,9 @@ public class Electronics extends Item {
                 + " | Price: " + getCurrentPrice()
                 + " | Warranty: " + warrantyMonths + " months");
     }
+
+    @Override
+    public ItemType getItemType() {
+        return ItemType.ELECTRONICS;
+    }
 }

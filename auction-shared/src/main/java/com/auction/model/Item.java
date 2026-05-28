@@ -43,4 +43,6 @@ public abstract class Item {
     }
 
     public abstract void printInfo();
+
+    public abstract ItemType getItemType();
 }
