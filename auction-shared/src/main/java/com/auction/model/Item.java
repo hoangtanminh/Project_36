@@ -41,6 +41,9 @@ public abstract class Item {
             throw new RuntimeException("New price must be higher than current price");
         }
     }
+    public void restoreCurrentPrice(double currentPrice) {
+        this.currentPrice = Math.max(startingPrice, currentPrice);
+    }
 
     public abstract void printInfo();
 

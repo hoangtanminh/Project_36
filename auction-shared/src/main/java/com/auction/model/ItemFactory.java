@@ -21,6 +21,10 @@ public class ItemFactory {
                 String artist = (String) extra[0];
                 return new Art(id, name, description, startingPrice, artist);
 
+            case CLOTHING:
+                String sizeLabel = (String) extra[0];
+                return new Clothing(id, name, description, startingPrice, sizeLabel);
+
             default:
                 throw new RuntimeException("Invalid item type");
         }
