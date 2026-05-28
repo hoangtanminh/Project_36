@@ -57,3 +57,4 @@ public final class SampleDataLoader {
         auctionService.placeBid(new BidRequest("A1005", "bidder01", 1535.0));
     }
 }
+// data thử khi vừa chạy app
