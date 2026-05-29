@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
-public final class AccountController {
+public final class   AccountController {
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance(Locale.US);
 
     @FXML private Label accountNameLabel;
