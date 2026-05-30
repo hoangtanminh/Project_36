@@ -12,68 +12,48 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class AuctionServer implements AutoCloseable {
-
-    private final int serverPort;
-    private final AuthenticationService authService;
+    private final int port;
+    private final AuthenticationService authenticationService;
     private final AuctionService auctionService;
-    private final AuctionEventPublisher publisher;
-
-    private final ExecutorService executor = Executors.newCachedThreadPool();
-
-    private volatile boolean active;
-    private ServerSocket listener;
+    private final AuctionEventPublisher eventPublisher;
+    private final ExecutorService clientPool = Executors.newCachedThreadPool();
+    private volatile boolean running;
+    private ServerSocket serverSocket;
 
     public AuctionServer(
-            int serverPort,
-            AuthenticationService authService,
+            int port,
+            AuthenticationService authenticationService,
             AuctionService auctionService,
-            AuctionEventPublisher publisher) {
-
-        this.serverPort = serverPort;
-        this.authService = authService;
+            AuctionEventPublisher eventPublisher) {
+        this.port = port;
+        this.authenticationService = authenticationService;
         this.auctionService = auctionService;
-        this.publisher = publisher;
+        this.eventPublisher = eventPublisher;
     }
 
     public void start() throws IOException {
-        listener = new ServerSocket(serverPort);
-        active = true;
+        serverSocket = new ServerSocket(port);
+        running = true;
+        System.out.println("Auction server listening on port " + port);
 
-        System.out.printf("Auction server started on port %d%n", serverPort);
-
-        while (active) {
-            waitForClient();
-        }
-    }
-
-    private void waitForClient() throws IOException {
-        try {
-            Socket client = listener.accept();
-
-            ClientSession session = new ClientSession(
-                    client,
-                    authService,
-                    auctionService,
-                    publisher
-            );
-
-            executor.execute(session);
-
-        } catch (SocketException ex) {
-            if (active) {
-                throw ex;
+        while (running) {
+            try {
+                Socket socket = serverSocket.accept();
+                clientPool.submit(new ClientSession(socket, authenticationService, auctionService, eventPublisher));
+            } catch (SocketException exception) {
+                if (running) {
+                    throw exception;
+                }
             }
         }
     }
 
     @Override
     public void close() throws IOException {
-        active = false;
-
-        executor.shutdownNow();
-
-        if (listener != null && !listener.isClosed()) {
-            listener.close();
+        running = false;
+        clientPool.shutdownNow();
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            serverSocket.close();
         }
     }
 }

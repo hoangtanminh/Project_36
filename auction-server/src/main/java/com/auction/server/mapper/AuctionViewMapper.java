@@ -47,6 +47,8 @@ public final class AuctionViewMapper {
                 auction.getStatus(),
                 auction.getStartTime(),
                 auction.getEndTime(),
+                auction.getBidIncrement(),
+                auction.getMinimumNextBid(),
                 toItemView(auction.getItem()),
                 toBidView(auction.getHighestBid()),
                 auction.getBidHistory().stream().map(this::toBidTransactionView).toList(),
@@ -55,7 +57,7 @@ public final class AuctionViewMapper {
     }
 
     public UserView toUserView(User user) {
-        return new UserView(user.getId(), user.getName(), resolveRole(user));
+        return new UserView(user.getId(), user.getName(), resolveRole(user), user.getBalance());
     }
 
     private ItemView toItemView(Item item) {

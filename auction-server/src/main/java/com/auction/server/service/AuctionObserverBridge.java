@@ -14,6 +14,7 @@ final class AuctionObserverBridge implements Observer {
     private final AuctionDao auctionDao;
     private final AuctionViewMapper mapper;
     private final com.auction.server.event.AuctionEventPublisher eventPublisher;
+    private final AuctionManager auctionManager = AuctionManager.getInstance();
     private AuctionStatus lastStatus;
     private Double lastHighestAmount;
 
@@ -34,11 +35,12 @@ final class AuctionObserverBridge implements Observer {
     @Override
     public synchronized void update(Auction auction) {
         auctionDao.findById(auctionId).ifPresent(record -> {
+            auctionDao.save(record);
             AuctionView view = mapper.toView(record);
             AuctionEventType eventType = resolveEventType(auction);
             String message = buildMessage(view, eventType);
             ServerResponse<AuctionView> response = ServerResponse.event(eventType, message, view);
-            eventPublisher.publishToAuction(auctionId, response);
+            auctionManager.publishToAuction(auctionId, response);
             lastStatus = auction.getStatus();
             lastHighestAmount = auction.getHighestBid() == null ? null : auction.getHighestBid().getAmount();
         });

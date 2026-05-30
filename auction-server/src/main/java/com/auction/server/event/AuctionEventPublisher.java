@@ -1,3 +1,4 @@
+//phát realtime tới client
 package com.auction.server.event;
 
 import com.auction.shared.protocol.ServerResponse;
