@@ -12,10 +12,12 @@ import com.auction.shared.enums.CommandType;
 import com.auction.shared.protocol.AuctionActionRequest;
 import com.auction.shared.protocol.AuctionSelectionRequest;
 import com.auction.shared.protocol.AuctionSubscriptionRequest;
+import com.auction.shared.protocol.AutoBidRequest;
 import com.auction.shared.protocol.BidRequest;
 import com.auction.shared.protocol.ClientRequest;
 import com.auction.shared.protocol.CreateAuctionRequest;
 import com.auction.shared.protocol.DashboardRequest;
+import com.auction.shared.protocol.DepositFundsRequest;
 import com.auction.shared.protocol.LoginRequest;
 import com.auction.shared.protocol.RegisterRequest;
 import com.auction.shared.protocol.ServerResponse;
@@ -33,6 +35,9 @@ public final class ClientSession implements Runnable, AuctionEventListener {
     private final AuthenticationService authenticationService;
     private final AuctionService auctionService;
     private final AuctionEventPublisher eventPublisher;
+    private final com.auction.server.service.AuctionManager auctionManager =
+            com.auction.server.service.AuctionManager.getInstance();
+    private final String sessionId;
     private volatile boolean running = true;
     private User authenticatedUser;
     private ObjectOutputStream outputStream;
@@ -47,10 +52,12 @@ public final class ClientSession implements Runnable, AuctionEventListener {
         this.authenticationService = authenticationService;
         this.auctionService = auctionService;
         this.eventPublisher = eventPublisher;
+        this.sessionId = socket.getRemoteSocketAddress() + "#" + System.identityHashCode(this);
     }
 
     @Override
     public void run() {
+        auctionManager.registerSession(sessionId);
         eventPublisher.subscribeGlobal(this);
         try {
             outputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -91,6 +98,7 @@ public final class ClientSession implements Runnable, AuctionEventListener {
             return;
         }
 
+        //phân loại request
         switch (commandType) {
             case LOGIN -> handleLogin((LoginRequest) request.getPayload());
             case REGISTER -> handleRegister((RegisterRequest) request.getPayload());
@@ -98,12 +106,16 @@ public final class ClientSession implements Runnable, AuctionEventListener {
             case LOAD_AUCTION_DETAILS -> handleAuctionSelection((AuctionSelectionRequest) request.getPayload());
             case SUBSCRIBE_AUCTION -> handleSubscribe((AuctionSubscriptionRequest) request.getPayload());
             case PLACE_BID -> handleBid((BidRequest) request.getPayload());
+            case SET_AUTO_BID -> handleAutoBid((AutoBidRequest) request.getPayload());
             case CREATE_AUCTION -> handleCreateAuction((CreateAuctionRequest) request.getPayload());
             case UPDATE_AUCTION -> handleUpdateAuction((UpdateAuctionRequest) request.getPayload());
             case DELETE_AUCTION -> handleDeleteAuction((AuctionActionRequest) request.getPayload());
+            case START_AUCTION -> handleStartAuction((AuctionActionRequest) request.getPayload());
             case FINISH_AUCTION -> handleFinishAuction((AuctionActionRequest) request.getPayload());
             case MARK_PAID -> handleMarkPaid((AuctionActionRequest) request.getPayload());
             case CANCEL_AUCTION -> handleCancelAuction((AuctionActionRequest) request.getPayload());
+            case DEPOSIT_FUNDS -> handleDepositFunds((DepositFundsRequest) request.getPayload());
+            case PAY_AUCTION -> handlePayAuction((AuctionActionRequest) request.getPayload());
             case LOGOUT -> running = false;
         }
     }
@@ -117,6 +129,7 @@ public final class ClientSession implements Runnable, AuctionEventListener {
     // Register tra ve UserView de client co the hien thi ket qua ngay tren man hinh dang ky.
     private void handleRegister(RegisterRequest payload) {
         User registeredUser = authenticationService.register(payload);
+        authenticatedUser = registeredUser;
         UserView view = auctionService.loadDashboard(registeredUser.getId()).currentUser();
         send(ServerResponse.success("Account created successfully.", view));
     }
@@ -145,6 +158,12 @@ public final class ClientSession implements Runnable, AuctionEventListener {
         send(ServerResponse.success("Bid accepted.", auction));
     }
 
+    private void handleAutoBid(AutoBidRequest payload) {
+        AutoBidRequest normalizedRequest = payload.withBidderId(authenticatedUser.getId());
+        AuctionView auction = auctionService.setAutoBid(normalizedRequest);
+        send(ServerResponse.success("Auto-bid configured.", auction));
+    }
+
     private void handleCreateAuction(CreateAuctionRequest payload) {
         CreateAuctionRequest normalizedRequest = payload.withSellerId(authenticatedUser.getId());
         AuctionView auction = auctionService.createAuction(normalizedRequest);
@@ -161,6 +180,12 @@ public final class ClientSession implements Runnable, AuctionEventListener {
         AuctionActionRequest normalizedRequest = payload.withActorId(authenticatedUser.getId());
         auctionService.deleteAuction(normalizedRequest);
         send(ServerResponse.success("Auction deleted.", "deleted"));
+    }
+
+    private void handleStartAuction(AuctionActionRequest payload) {
+        AuctionActionRequest normalizedRequest = payload.withActorId(authenticatedUser.getId());
+        AuctionView auction = auctionService.startAuction(normalizedRequest);
+        send(ServerResponse.success("Auction started.", auction));
     }
 
     private void handleFinishAuction(AuctionActionRequest payload) {
@@ -181,6 +206,19 @@ public final class ClientSession implements Runnable, AuctionEventListener {
         send(ServerResponse.success("Auction canceled.", auction));
     }
 
+    private void handleDepositFunds(DepositFundsRequest payload) {
+        DepositFundsRequest normalizedRequest = payload.withUserId(authenticatedUser.getId());
+        UserView user = auctionService.depositFunds(normalizedRequest);
+        authenticatedUser = authenticationService.login(user.getId(), authenticatedUser.getPassword());
+        send(ServerResponse.success("Balance updated.", user));
+    }
+
+    private void handlePayAuction(AuctionActionRequest payload) {
+        AuctionActionRequest normalizedRequest = payload.withActorId(authenticatedUser.getId());
+        AuctionView auction = auctionService.payAuction(normalizedRequest);
+        send(ServerResponse.success("Auction paid successfully.", auction));
+    }
+
     private synchronized void send(ServerResponse<?> response) {
         if (outputStream == null || !running) {
             return;
@@ -197,9 +235,10 @@ public final class ClientSession implements Runnable, AuctionEventListener {
     private void closeQuietly() {
         running = false;
         eventPublisher.unsubscribe(this);
+        auctionManager.unregisterSession(sessionId);
         try {
             socket.close();
         } catch (IOException ignored) {
         }
     }
-}// session giong hander
+}
