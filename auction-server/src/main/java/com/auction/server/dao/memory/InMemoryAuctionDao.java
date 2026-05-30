@@ -1,6 +1,5 @@
 package com.auction.server.dao.memory;
 
-import com.auction.model.AuctionStatus;
 import com.auction.server.dao.AuctionDao;
 import com.auction.server.domain.ManagedAuction;
 
@@ -28,8 +27,6 @@ public final class InMemoryAuctionDao implements AuctionDao {
     @Override
     public List<ManagedAuction> findVisibleAuctions() {
         return auctions.values().stream()
-                .filter(record -> record.getAuction().getStatus() == AuctionStatus.OPEN
-                        || record.getAuction().getStatus() == AuctionStatus.RUNNING)
                 .sorted(Comparator.comparing(record -> record.getAuction().getEndTime()))
                 .toList();
     }

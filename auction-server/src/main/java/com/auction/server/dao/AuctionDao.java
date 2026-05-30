@@ -16,5 +16,5 @@ public interface AuctionDao {
 
     ManagedAuction save(ManagedAuction managedAuction);
 
-
+    void deleteById(String auctionId);
 }
