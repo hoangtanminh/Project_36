@@ -1,9 +1,8 @@
-//login
 package com.auctionhouse.client.controller;
 
+import com.auction.shared.dto.UserView;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-import com.auctionhouse.shared.model.User;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -14,10 +13,14 @@ import javafx.scene.control.TextField;
 import java.util.concurrent.CompletableFuture;
 
 public final class LoginController {
-    @FXML                                           //sử dụng các component của fxml
+    @FXML
     private TextField usernameField;
     @FXML
     private PasswordField passwordField;
+    @FXML
+    private TextField passwordVisibleField;
+    @FXML
+    private Button togglePasswordButton;
     @FXML
     private Label statusLabel;
     @FXML
@@ -25,38 +28,45 @@ public final class LoginController {
 
     private AppCoordinator coordinator;
     private AuctionClientService clientService;
-        // init() được Appcoordinator gọi sau  khi load xong fxml
+    private boolean passwordVisible;
+
     public void init(AppCoordinator coordinator, AuctionClientService clientService) {
         this.coordinator = coordinator;
         this.clientService = clientService;
+        passwordField.textProperty().bindBidirectional(passwordVisibleField.textProperty());
+        setPasswordVisibility(false);
         statusLabel.setText("Sample login: bidder01/bidder01, bidder02/bidder02, seller01/seller01, admin01/admin01");
     }
 
     @FXML
     private void handleLogin() {
-        // lấy text
-        String username = readText(usernameField);
+        String username = readText(usernameField);  //đọc dữ liệu từ input
         String password = readText(passwordField);
-        if (username.isBlank() || password.isBlank()) {     //isBlank để kiểm tra chuỗi rỗng
-            statusLabel.setText("Enter both username and password.");
-            return;     //  nếu rỗng thì dừng lại không chạy tiếp
+        if (username.isBlank() || password.isBlank()) {
+            statusLabel.setText("Enter both username and password.");//nếu đầu vào trống thì dừng hàm
+            return;
         }
 
-        loginButton.setDisable(true);       // vô hiệu nút login tránh việc spam
-        statusLabel.setText("Connecting to auction server...");     //hiển thị đang kết nối sever
-        //  CompletableFuture.supplyAsync() chạy code ở luồng phụ, xong rồi Platform.runLater() đưa kết quả về luồng UI để cập nhật giao diện.
+        loginButton.setDisable(true); // khóa nút login để tránh spam
+        statusLabel.setText("Connecting to auction server...");
+        //chạy login ở luồng phụ
+        //socket gửi request về sever->AuthenticationService.login()->sever trả lại ueserView
         CompletableFuture.supplyAsync(() -> clientService.login(username, password))
-                //khi chạy xong chạy tiếp
                 .whenComplete((user, throwable) -> Platform.runLater(() -> finishLogin(user, throwable)));
     }
 
-    @FXML       //bấm nút trong UI sẽ gọi đếnn hàm này
+    @FXML
     private void goToRegister() {
         try {
-            coordinator.showRegister();     // chuyển scene sang register
+            coordinator.showRegister();
         } catch (Exception exception) {
-            statusLabel.setText(exception.getMessage());        // lỗi thì báo ra UI
+            statusLabel.setText(exception.getMessage());
         }
+    }
+
+    @FXML
+    private void togglePasswordVisibility() {
+        setPasswordVisibility(!passwordVisible);
     }
 
     @FXML
@@ -80,17 +90,17 @@ public final class LoginController {
         handleLogin();
     }
 
-    private void finishLogin(User user, Throwable throwable) {
-        loginButton.setDisable(false);      // cho phép user bấm lại
+    private void finishLogin(UserView user, Throwable throwable) {
+        loginButton.setDisable(false);
         if (throwable != null) {
-            statusLabel.setText(extractMessage(throwable));     // nếu có lỗi hiện thông báo ra UI
+            statusLabel.setText(extractMessage(throwable));
             return;
         }
 
         try {
-            coordinator.showDashboard(user);    //chuyển sang màn hình chính
+            coordinator.showDashboard(user);
         } catch (Exception exception) {
-            statusLabel.setText(exception.getMessage());    // lỗi khi load UI thì hiện massage
+            statusLabel.setText(exception.getMessage());
         }
     }
 
@@ -101,5 +111,17 @@ public final class LoginController {
     private String extractMessage(Throwable throwable) {
         Throwable cause = throwable.getCause() == null ? throwable : throwable.getCause();
         return cause.getMessage() == null ? throwable.getMessage() : cause.getMessage();
+    }
+
+    private void setPasswordVisibility(boolean visible) {
+        passwordVisible = visible;
+        passwordField.setVisible(!visible);
+        passwordField.setManaged(!visible);
+        passwordVisibleField.setVisible(visible);
+        passwordVisibleField.setManaged(visible);
+        togglePasswordButton.setText(visible ? "🙈" : "👁");
+
+        TextField activeField = visible ? passwordVisibleField : passwordField;
+        activeField.positionCaret(activeField.getText() == null ? 0 : activeField.getText().length());
     }
 }

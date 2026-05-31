@@ -1,24 +1,24 @@
-//service
 package com.auctionhouse.client.service;
 
-import com.auctionhouse.shared.enums.CommandType;
-import com.auctionhouse.shared.enums.ResponseStatus;
-import com.auctionhouse.shared.model.Auction;
-import com.auctionhouse.shared.model.DashboardData;
-import com.auctionhouse.shared.model.User;
-import com.auctionhouse.shared.protocol.AuctionActionRequest;
-import com.auctionhouse.shared.protocol.AuctionSelectionRequest;
-import com.auctionhouse.shared.protocol.AuctionStatusChangeRequest;
-import com.auctionhouse.shared.protocol.AuctionSubscriptionRequest;
-import com.auctionhouse.shared.protocol.BidRequest;
-import com.auctionhouse.shared.protocol.ClientRequest;
-import com.auctionhouse.shared.protocol.CreateAuctionRequest;
-import com.auctionhouse.shared.protocol.DashboardRequest;
-import com.auctionhouse.shared.protocol.LoginRequest;
-import com.auctionhouse.shared.protocol.LogoutRequest;
-import com.auctionhouse.shared.protocol.RegisterRequest;
-import com.auctionhouse.shared.protocol.ServerResponse;
-import com.auctionhouse.shared.protocol.UpdateAuctionRequest;
+import com.auction.shared.dto.AuctionView;
+import com.auction.shared.dto.DashboardView;
+import com.auction.shared.dto.UserView;
+import com.auction.shared.enums.CommandType;
+import com.auction.shared.enums.ResponseStatus;
+import com.auction.shared.protocol.AuctionActionRequest;
+import com.auction.shared.protocol.AuctionSelectionRequest;
+import com.auction.shared.protocol.AuctionSubscriptionRequest;
+import com.auction.shared.protocol.AutoBidRequest;
+import com.auction.shared.protocol.BidRequest;
+import com.auction.shared.protocol.ClientRequest;
+import com.auction.shared.protocol.CreateAuctionRequest;
+import com.auction.shared.protocol.DashboardRequest;
+import com.auction.shared.protocol.DepositFundsRequest;
+import com.auction.shared.protocol.LoginRequest;
+import com.auction.shared.protocol.LogoutRequest;
+import com.auction.shared.protocol.RegisterRequest;
+import com.auction.shared.protocol.ServerResponse;
+import com.auction.shared.protocol.UpdateAuctionRequest;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -31,149 +31,227 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 public final class AuctionClientService implements Closeable {
-    private final String host;      //ip sever
-    private final int port;     // cổng trong sever
-    //Queue chứa các response từ sever chờ xử lí
+    private final String host;
+    private final int port;
     private final BlockingQueue<ServerResponse<?>> responses = new LinkedBlockingQueue<>();
     private volatile Consumer<ServerResponse<?>> eventListener = response -> {
-    };  // được gọi khi có response từ sever để thông báo khi nhận được dữ liệu
-    private Socket socket;   //kết nối TCP với socket  (TCP là giao thức giúp 2 máy gửi dữ liệu cho nhau)
-    private ObjectOutputStream outputStream;    //dữ liệu nhận về
-    private ObjectInputStream inputStream;  //dữ liệu gửi đi
-    private CompletableFuture<Void> listenerLoop;   //đọc dữ liệu liên tục
+    };
+    private Socket socket;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
+    private CompletableFuture<Void> listenerLoop;
+    private volatile String authenticatedUserId = "client";
 
     public AuctionClientService(String host, int port) {
         this.host = host;
         this.port = port;
     }
 
-    //nếu respone từ sever gửi về là null thì hàm rỗng
     public void setEventListener(Consumer<ServerResponse<?>> eventListener) {
         this.eventListener = eventListener == null ? response -> {
         } : eventListener;
     }
-
-    // uI gọi hàm login , client tạo request gửi cho sever check , sever trả về kết quả cho client
-    public User login(String username, String password) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.LOGIN, new LoginRequest(username, password))), User.class);
+    // tạo loginRequest gửi cho sever và đợi sever trả về respone
+    public UserView login(String username, String password) {
+        UserView userView = expectPayload(sendAndAwait(new ClientRequest<>(
+                CommandType.LOGIN,
+                new LoginRequest(username, password))), UserView.class);
+        authenticatedUserId = userView.getId();
+        return userView;
     }
 
-    public User register(RegisterRequest request) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.REGISTER, request)), User.class);
+    public UserView register(RegisterRequest request) {
+        UserView userView = expectPayload(sendAndAwait(new ClientRequest<>(CommandType.REGISTER, request)), UserView.class);
+        authenticatedUserId = userView.getId();
+        return userView;
     }
 
-    public DashboardData loadDashboard(String username) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.LOAD_DASHBOARD, new DashboardRequest(username))), DashboardData.class);
+    public DashboardView loadDashboard(String userId) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(
+                CommandType.LOAD_DASHBOARD,
+                new DashboardRequest(userId))), DashboardView.class);
     }
 
-    public Auction loadAuction(long auctionId) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.LOAD_AUCTION_DETAILS, new AuctionSelectionRequest(auctionId))), Auction.class);
+    public AuctionView loadAuction(String auctionId) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(
+                CommandType.LOAD_AUCTION_DETAILS,
+                new AuctionSelectionRequest(auctionId))), AuctionView.class);
     }
 
-    public Auction subscribe(long auctionId, String username) {
-        return expectPayload(sendAndAwait(
-                new ClientRequest<>(CommandType.SUBSCRIBE_AUCTION, new AuctionSubscriptionRequest(auctionId, username))),
-                Auction.class);
+    public AuctionView subscribe(String auctionId, String viewerId) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(
+                CommandType.SUBSCRIBE_AUCTION,
+                new AuctionSubscriptionRequest(auctionId, viewerId))), AuctionView.class);
     }
 
-    public Auction placeBid(BidRequest request) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.PLACE_BID, request)), Auction.class);
+    public AuctionView placeBid(BidRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.PLACE_BID, request)), AuctionView.class);
     }
 
-    public Auction createAuction(CreateAuctionRequest request) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.CREATE_AUCTION, request)), Auction.class);
+    public AuctionView setAutoBid(AutoBidRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.SET_AUTO_BID, request)), AuctionView.class);
     }
 
-    public Auction updateAuction(UpdateAuctionRequest request) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.UPDATE_AUCTION, request)), Auction.class);
+    public AuctionView createAuction(CreateAuctionRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.CREATE_AUCTION, request)), AuctionView.class);
+    }
+
+    public AuctionView updateAuction(UpdateAuctionRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.UPDATE_AUCTION, request)), AuctionView.class);
     }
 
     public void deleteAuction(AuctionActionRequest request) {
         sendAndAwait(new ClientRequest<>(CommandType.DELETE_AUCTION, request));
     }
 
-    public Auction changeAuctionStatus(AuctionStatusChangeRequest request) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.CHANGE_AUCTION_STATUS, request)), Auction.class);
+    public AuctionView startAuction(AuctionActionRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.START_AUCTION, request)), AuctionView.class);
     }
 
-    private synchronized ServerResponse<?> sendAndAwait(ClientRequest<?> request) {
-        ensureConnected();  // đảm bảo đã kết nối
+    public AuctionView finishAuction(AuctionActionRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.FINISH_AUCTION, request)), AuctionView.class);
+    }
+
+    public AuctionView markPaid(AuctionActionRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.MARK_PAID, request)), AuctionView.class);
+    }
+
+    public AuctionView cancelAuction(AuctionActionRequest request) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.CANCEL_AUCTION, request)), AuctionView.class);
+    }
+
+    public UserView depositFunds(double amount) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(
+                CommandType.DEPOSIT_FUNDS,
+                new DepositFundsRequest(authenticatedUserId, amount))), UserView.class);
+    }
+
+    public AuctionView payAuction(String auctionId) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(
+                CommandType.PAY_AUCTION,
+                new AuctionActionRequest(auctionId, authenticatedUserId))), AuctionView.class);
+    }
+
+    public synchronized void logout() {
         try {
-            outputStream.writeObject(request);  //tạo object
-            outputStream.flush();   //đẩy đi luộn
-            outputStream.reset();   // reset để tránh lỗi
-            ServerResponse<?> response = responses.take();
-            if (response.getStatus() == ResponseStatus.ERROR) {
-                throw new IllegalStateException(response.getMessage());     //nếu sever báo lỗi thì hiện exception
+            if (outputStream != null && socket != null && socket.isConnected() && !socket.isClosed()) {
+                outputStream.writeObject(new ClientRequest<>(CommandType.LOGOUT, new LogoutRequest(authenticatedUserId)));
+                outputStream.flush();
+                outputStream.reset();
             }
-            return response; //trả về kết qả
-        } catch (IOException exception) {   // bắt lỗi network
+        } catch (Exception ignored) {
+        } finally {
+            authenticatedUserId = "client";
+            eventListener = response -> {
+            };
+            responses.clear();
+            closeResourcesQuietly();
+        }
+    }
+
+    //chỉ cho 1thread chạy 1 lúc
+    private synchronized ServerResponse<?> sendAndAwait(ClientRequest<?> request) {
+        ensureConnected(); // confirm Socket còn connect
+        try {
+
+            outputStream.writeObject(request);//gửi request qa socket
+
+            outputStream.flush();//ép buffer gửi request cho sever ngay
+            outputStream.reset();//xóa cache obj để tránh gửi dữ liệu sai
+
+            ServerResponse<?> response = responses.take();  // là nơi đợi response sever gửi về
+
+            //check lỗi rồi throw ra một java exception
+            if (response.getStatus() == ResponseStatus.ERROR) {
+                throw new IllegalStateException(response.getMessage());
+            }
+            return response; // không sai thì trả lại response
+        } catch (IOException exception) {
+            //bắt lỗi mạng như mất kết nối , socket lỗi hay sever tắt
             throw new IllegalStateException("Network error: " + exception.getMessage(), exception);
-        } catch (InterruptedException exception) {
+        } catch (InterruptedException exception) {//bắt lỗi bị interrupt
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for server response.", exception);
         }
     }
 
-    // hàm để đảm bảo đã kết nối với sever
+    //đảm bảo client đang kết nối với sever
     private void ensureConnected() {
-        if (socket != null && socket.isConnected() && !socket.isClosed()) { //đã có socket , kết nối , chưa đóng
+        //nếu socket đã được tạo và kết nối và chưa đóng thì ok
+        if (socket != null && socket.isConnected() && !socket.isClosed()) {
             return;
         }
-        //tạo kết nối mới
         try {
-            socket = new Socket(host, port);
+            responses.clear();// xóa để tránh request mới nhận nhầm response cũ
+            socket = new Socket(host, port);//tạo socket
+            // serialization ( tuần tự hóa ) biến các đối tượng thành các chuỗi byte đến buffer trên socket máy nhận
             outputStream = new ObjectOutputStream(socket.getOutputStream());
-            outputStream.flush();
-            inputStream = new ObjectInputStream(socket.getInputStream());
+            outputStream.flush();//ép gưỉ đi luôn
+            inputStream = new ObjectInputStream(socket.getInputStream());//đọc response từ sever
+            //tạo background thread , đọc response liên tục
             listenerLoop = CompletableFuture.runAsync(this::listenForResponses);
-        //bắt lỗi không connect được
-        } catch (IOException exception) {
+        } catch (IOException exception) { //bắt lỗi mạng
             throw new IllegalStateException("Cannot connect to auction server at " + host + ":" + port, exception);
         }
     }
 
-    //hàm nghe lén, chạy nền , đọc dữ liệu liên tục
+    //UI update realtime như giá bid đổi , winner đổi...
     private void listenForResponses() {
         try {
-            while (socket != null && !socket.isClosed()) {  // chỉ dừng khi socket null hoặc bị đóng
-                Object payload = inputStream.readObject();//đọc giữ liệu
-                if (!(payload instanceof ServerResponse<?> response)) { // nếu không phải dữ liệu cùa sever bỏ qa
+            while (socket != null && !socket.isClosed()) {  //nếu socket còn chưa bị đóng và tồn tại thì lặp lại vô hạn
+                Object payload = inputStream.readObject();  //client chờ sever gửi dữ liệu
+                if (!(payload instanceof ServerResponse<?> response)) { //nếu khong phải sever response thì bỏ qua
                     continue;
                 }
-                // nếu là response real-time thì xử lí luôn , không thì để sendAndAwait() lấy ra
+                //event khác response là client không cần request trước , sever tự push
                 if (response.getStatus() == ResponseStatus.EVENT) {
-                    eventListener.accept(response);
+                    eventListener.accept(response); // nếu là event thì cập nhật giao diện ngay lập tức
                 } else {
                     responses.offer(response);
                 }
             }
         } catch (Exception ignored) {
+            responses.offer(ServerResponse.error("Connection to auction server was closed."));
+        } finally {
+            closeResourcesQuietly();
         }
     }
 
     @SuppressWarnings("unchecked")
     private <T> T expectPayload(ServerResponse<?> response, Class<T> type) {
-        Object payload = response.getPayload(); // lấy dữ liệu trong ResponseSever
+        Object payload = response.getPayload(); //lấy dữ liệu sever gửi về
         if (!type.isInstance(payload)) {
-            throw new IllegalStateException("Unexpected response payload: " + payload);// nếu sai kiểu thì hiện lỗi
+            throw new IllegalStateException("Unexpected response payload: " + payload); //sai kiểu thì ném ra lỗi
         }
-        return (T) payload; // đúng kiểu thì ép lại  rồi trả về
+        return (T) payload;
     }
 
     @Override
-    //hàm đóng kết nối của client với sever
-    public synchronized void close() throws IOException {
-        try {
-            if (outputStream != null && socket != null && socket.isConnected() && !socket.isClosed()) {
-                outputStream.writeObject(new ClientRequest<>(CommandType.LOGOUT, new LogoutRequest("client")));
-                outputStream.flush();
-            }
-        } catch (Exception ignored) {
-        }
+    public synchronized void close() throws IOException { //chỉ cho phép 1 thread dùng close() tại 1 thời điểm
+        logout();
+    }
 
-        if (socket != null) {
-            socket.close();
+    private synchronized void closeResourcesQuietly() {
+        try {
+            if (inputStream != null) {  //ngừng đọc dữ liệu từ sever
+                inputStream.close();
+            }
+        } catch (IOException ignored) { //có lỗi thì bỏ qua
         }
+        try {
+            if (outputStream != null) { //ngừng gửi dữ liệu cho sever
+                outputStream.close();
+            }
+        } catch (IOException ignored) {
+        }
+        try {
+            if (socket != null) {       //ngắt kết nối socket
+                socket.close();
+            }
+        } catch (IOException ignored) {
+        }
+        inputStream = null;             //set lại trạng thái sau khi logout
+        outputStream = null;
+        socket = null;
     }
 }

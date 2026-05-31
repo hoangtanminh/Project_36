@@ -1,19 +1,23 @@
 package com.auctionhouse.client.controller;
 
+import com.auction.model.AuctionStatus;
+import com.auction.shared.dto.AuctionView;
+import com.auction.shared.dto.BidTransactionView;
+import com.auction.shared.dto.UserView;
+import com.auction.shared.enums.UserRole;
+import com.auction.shared.protocol.AutoBidRequest;
+import com.auction.shared.protocol.BidRequest;
+import com.auction.shared.protocol.ServerResponse;
 import com.auctionhouse.client.model.SessionModel;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-import com.auctionhouse.shared.enums.AuctionStatus;
-import com.auctionhouse.shared.enums.UserRole;
-import com.auctionhouse.shared.model.Auction;
-import com.auctionhouse.shared.model.Bid;
-import com.auctionhouse.shared.model.BuyNowAuction;
-import com.auctionhouse.shared.model.User;
-import com.auctionhouse.shared.protocol.AuctionSubscriptionRequest;
-import com.auctionhouse.shared.protocol.BidRequest;
-import com.auctionhouse.shared.protocol.ServerResponse;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
@@ -22,13 +26,17 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
-import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 public final class AuctionDetailController {
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance(Locale.US);
+    private static final DateTimeFormatter DATE_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("MMM dd, HH:mm", Locale.US);
 
     @FXML private Label titleLabel;
     @FXML private Label sellerLabel;
@@ -45,54 +53,64 @@ public final class AuctionDetailController {
     @FXML private Label imageHintLabel;
     @FXML private TextField bidAmountField;
     @FXML private Button placeBidButton;
+    @FXML private TextField autoBidMaxField;
+    @FXML private TextField autoBidIncrementField;
+    @FXML private Button autoBidButton;
     @FXML private Label actionStatusLabel;
-    @FXML private ListView<Bid> bidHistoryListView;
+    @FXML private LineChart<Number, Number> bidChart;
+    @FXML private NumberAxis bidChartXAxis;
+    @FXML private NumberAxis bidChartYAxis;
+    @FXML private ListView<BidTransactionView> bidHistoryListView;
 
     private AppCoordinator coordinator;
     private AuctionClientService clientService;
-    private User currentUser;
+    private UserView currentUser;
     private final SessionModel sessionModel = new SessionModel();
+    private Timeline countdownTimeline;
 
     public void init(AppCoordinator coordinator, AuctionClientService clientService,
-                     User currentUser, Auction auction) {
+                     UserView currentUser, AuctionView auction) {
         this.coordinator = coordinator;
         this.clientService = clientService;
         this.currentUser = currentUser;
 
         configureView();
         clientService.setEventListener(this::handleEventResponse);
+        sessionModel.selectAuction(auction);
+        renderAuction(auction);
+        actionStatusLabel.setText(buildBidHint(auction));
         subscribeAndRender(auction);
     }
 
     @FXML
     private void goBack() {
+        stopCountdown();
         try {
             coordinator.showDashboard(currentUser);
-        } catch (Exception e) {
-            actionStatusLabel.setText(e.getMessage());
+        } catch (Exception exception) {
+            actionStatusLabel.setText(exception.getMessage());
         }
     }
 
     @FXML
     private void placeBid() {
-        Auction selected = sessionModel.selectedAuctionProperty().get();
+        AuctionView selected = sessionModel.selectedAuctionProperty().get();
         if (selected == null) {
             actionStatusLabel.setText("Auction details are still loading.");
             return;
         }
+        if (currentUser.getRole() != UserRole.BIDDER) {
+            actionStatusLabel.setText("Only bidder accounts can place bids.");
+            return;
+        }
+        if (!canAcceptBids(selected)) {
+            actionStatusLabel.setText("Auction is not accepting bids right now.");
+            return;
+        }
 
         try {
-            if (currentUser.getRole() != UserRole.BIDDER) {
-                actionStatusLabel.setText("Only bidder accounts can place bids.");
-                return;
-            }
-            if (!selected.canAcceptBids()) {
-                actionStatusLabel.setText("Auction is not accepting bids right now.");
-                return;
-            }
-
-            BigDecimal amount = parseBidAmount(bidAmountField.getText());
-            if (amount.compareTo(selected.getMinimumNextBid()) < 0) {
+            double amount = parseBidAmount(bidAmountField.getText());
+            if (amount < selected.getMinimumNextBid()) {
                 actionStatusLabel.setText("Bid must be at least "
                         + CURRENCY.format(selected.getMinimumNextBid()));
                 return;
@@ -101,25 +119,83 @@ public final class AuctionDetailController {
             actionStatusLabel.setText("Submitting bid...");
             CompletableFuture.supplyAsync(
                             () -> clientService.placeBid(
-                                    new BidRequest(selected.getId(), currentUser.getUsername(), amount)))
+                                    new BidRequest(selected.getAuctionId(), currentUser.getId(), amount)))
                     .whenComplete((auction, err) -> Platform.runLater(() -> {
                         if (err != null) {
                             actionStatusLabel.setText(extractMessage(err));
                             return;
                         }
-                        actionStatusLabel.setText("Bid accepted!");
                         sessionModel.selectAuction(auction);
                         renderAuction(auction);
+                        actionStatusLabel.setText("Bid accepted!");
                         bidAmountField.clear();
                     }));
-        } catch (IllegalArgumentException e) {
-            actionStatusLabel.setText(e.getMessage());
+        } catch (IllegalArgumentException exception) {
+            actionStatusLabel.setText(exception.getMessage());
+        }
+    }
+
+    @FXML
+    private void setAutoBid() {
+        AuctionView selected = sessionModel.selectedAuctionProperty().get();
+        if (selected == null) {
+            actionStatusLabel.setText("Auction details are still loading.");
+            return;
+        }
+        if (currentUser.getRole() != UserRole.BIDDER) {
+            actionStatusLabel.setText("Only bidder accounts can configure auto-bidding.");
+            return;
+        }
+        if (!canAcceptBids(selected)) {
+            actionStatusLabel.setText("Auction is not accepting auto-bids right now.");
+            return;
+        }
+
+        try {
+            double maxBid = parseBidAmount(autoBidMaxField.getText());
+            double increment = parseBidAmount(autoBidIncrementField.getText());
+            if (maxBid < selected.getMinimumNextBid()) {
+                actionStatusLabel.setText("Auto-bid max must be at least "
+                        + CURRENCY.format(selected.getMinimumNextBid()));
+                return;
+            }
+            if (increment <= 0) {
+                actionStatusLabel.setText("Auto-bid step must be greater than zero.");
+                return;
+            }
+
+            actionStatusLabel.setText("Arming auto-bid...");
+            CompletableFuture.supplyAsync(
+                            () -> clientService.setAutoBid(new AutoBidRequest(
+                                    selected.getAuctionId(),
+                                    currentUser.getId(),
+                                    maxBid,
+                                    increment)))
+                    .whenComplete((auction, err) -> Platform.runLater(() -> {
+                        if (err != null) {
+                            actionStatusLabel.setText(extractMessage(err));
+                            return;
+                        }
+                        sessionModel.selectAuction(auction);
+                        renderAuction(auction);
+                        actionStatusLabel.setText("Auto-bid armed up to " + CURRENCY.format(maxBid) + ".");
+                    }));
+        } catch (IllegalArgumentException exception) {
+            actionStatusLabel.setText(exception.getMessage());
         }
     }
 
     private void configureView() {
-        bidAmountField.setDisable(currentUser.getRole() != UserRole.BIDDER);
-        placeBidButton.setDisable(currentUser.getRole() != UserRole.BIDDER);
+        boolean bidder = currentUser.getRole() == UserRole.BIDDER;
+        bidAmountField.setDisable(!bidder);
+        placeBidButton.setDisable(!bidder);
+        autoBidMaxField.setDisable(!bidder);
+        autoBidIncrementField.setDisable(!bidder);
+        autoBidButton.setDisable(!bidder);
+        bidChart.setAnimated(false);
+        bidChart.setLegendVisible(false);
+        bidChartXAxis.setForceZeroInRange(false);
+        bidChartYAxis.setForceZeroInRange(false);
 
         bidHistoryListView.setCellFactory(lv -> new ListCell<>() {
             private final Label bidderLabel = new Label();
@@ -134,7 +210,7 @@ public final class AuctionDetailController {
             }
 
             @Override
-            protected void updateItem(Bid item, boolean empty) {
+            protected void updateItem(BidTransactionView item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
@@ -142,19 +218,20 @@ public final class AuctionDetailController {
                     setStyle("-fx-background-color: transparent;");
                     return;
                 }
-                bidderLabel.setText(item.getBidderDisplayName() + " placed " + CURRENCY.format(item.getAmount()));
-                metaLabel.setText(item.getCreatedAt().toString());
+                bidderLabel.setText(item.getBidderName() + " placed " + CURRENCY.format(item.getAmount()));
+                metaLabel.setText(item.getTimestamp().toString());
                 setGraphic(content);
                 setStyle("-fx-background-color: #111522; -fx-background-radius: 10; "
                         + "-fx-border-color: #2b3047; -fx-border-radius: 10; -fx-padding: 10 12;");
             }
         });
         bidHistoryListView.setItems(sessionModel.getBidHistory());
+        bidHistoryListView.setPlaceholder(new Label("No bids have been placed yet."));
     }
 
-    private void subscribeAndRender(Auction auction) {
+    private void subscribeAndRender(AuctionView auction) {
         CompletableFuture.supplyAsync(
-                        () -> clientService.subscribe(auction.getId(), currentUser.getUsername()))
+                        () -> clientService.subscribe(auction.getAuctionId(), currentUser.getId()))
                 .whenComplete((loaded, err) -> Platform.runLater(() -> {
                     if (err != null) {
                         actionStatusLabel.setText(extractMessage(err));
@@ -162,76 +239,106 @@ public final class AuctionDetailController {
                     }
                     sessionModel.selectAuction(loaded);
                     renderAuction(loaded);
+                    actionStatusLabel.setText(buildBidHint(loaded));
                 }));
     }
 
-    private void renderAuction(Auction auction) {
-        if (auction == null) return;
-        titleLabel.setText(auction.getProduct().getTitle());
-        sellerLabel.setText(auction.getSeller().getDisplayName());
-        categoryLabel.setText(auction.getProduct().getCategory());
-        typeLabel.setText(auction.getAuctionTypeLabel());
-        statusValueLabel.setText(auction.getStatus().name());
-        countdownLabel.setText(switch (auction.getStatus()) {
-            case RUNNING -> auction.getSecondsRemaining() + " seconds remaining";
-            case OPEN -> "Waiting to start";
-            case FINISHED -> "Auction finished";
-            case PAID -> "Payment completed";
-            case CANCELED -> "Auction canceled";
-        });
-        priceLabel.setText(CURRENCY.format(auction.getCurrentPrice()));
-        nextBidLabel.setText(CURRENCY.format(auction.getMinimumNextBid()));
-        reserveLabel.setText(CURRENCY.format(auction.getReservePrice()));
-        winnerValueLabel.setText(auction.getWinnerDisplayName());
-        descriptionLabel.setText(auction.getProduct().getDescription());
-        productHighlightLabel.setText(auction.getProduct().getHighlightLine());
-        imageHintLabel.setText("Visual hint: " + auction.getProduct().getImageHint());
-        updateBidInteractionState(auction);
-
-        if (auction instanceof BuyNowAuction b) {
-            typeLabel.setText(auction.getAuctionTypeLabel()
-                    + " | Buy now " + CURRENCY.format(b.getBuyNowPrice()));
+    private void renderAuction(AuctionView auction) {
+        if (auction == null) {
+            return;
         }
+        titleLabel.setText(auction.getItem().getName());
+        sellerLabel.setText("Seller: " + auction.getSellerName());
+        categoryLabel.setText(auction.getItem().getItemType());
+        typeLabel.setText(auction.getItem().getDetailLabel());
+        statusValueLabel.setText(buildStatusLabel(auction));
+        statusValueLabel.setStyle(buildStatusStyle(auction));
+        restartCountdown();
+        priceLabel.setText(CURRENCY.format(auction.getItem().getCurrentPrice()));
+        nextBidLabel.setText(CURRENCY.format(auction.getMinimumNextBid()));
+        reserveLabel.setText(CURRENCY.format(auction.getItem().getStartingPrice()));
+        winnerValueLabel.setText(safeValue(auction.getWinnerName(), "No winner yet"));
+        descriptionLabel.setText(safeValue(auction.getItem().getDescription(), "No description provided."));
+        productHighlightLabel.setText(safeValue(auction.getItem().getDetailLabel(), ""));
+        imageHintLabel.setText("Auction ID: " + auction.getAuctionId()
+                + " | Start: " + auction.getStartTime().format(DATE_TIME_FORMAT)
+                + " | End: " + auction.getEndTime().format(DATE_TIME_FORMAT));
+        renderBidChart(auction);
+        updateBidInteractionState(auction);
     }
 
-    private void updateBidInteractionState(Auction auction) {
-        boolean canBid = currentUser.getRole() == UserRole.BIDDER && auction.canAcceptBids();
+    private void updateBidInteractionState(AuctionView auction) {
+        boolean canBid = currentUser.getRole() == UserRole.BIDDER && canAcceptBids(auction);
         bidAmountField.setDisable(!canBid);
         placeBidButton.setDisable(!canBid);
+        autoBidMaxField.setDisable(!canBid);
+        autoBidIncrementField.setDisable(!canBid);
+        autoBidButton.setDisable(!canBid);
         bidAmountField.setPromptText("Min " + CURRENCY.format(auction.getMinimumNextBid()));
+        autoBidMaxField.setPromptText("Min " + CURRENCY.format(auction.getMinimumNextBid()));
+        autoBidIncrementField.setPromptText(CURRENCY.format(auction.getBidIncrement()));
+    }
 
-        if (currentUser.getRole() != UserRole.BIDDER) {
-            actionStatusLabel.setText("Only bidder accounts can place bids.");
-            return;
+    private void renderBidChart(AuctionView auction) {
+        XYChart.Series<Number, Number> series = new XYChart.Series<>();
+        if (auction.getBidHistory().isEmpty()) {
+            series.getData().add(new XYChart.Data<>(1, auction.getItem().getCurrentPrice()));
+        } else {
+            for (int i = 0; i < auction.getBidHistory().size(); i++) {
+                series.getData().add(new XYChart.Data<>(i + 1, auction.getBidHistory().get(i).getAmount()));
+            }
         }
-        if (auction.getStatus() != AuctionStatus.RUNNING) {
-            actionStatusLabel.setText("Auction must be RUNNING before you can bid.");
-            return;
-        }
-        if (!auction.canAcceptBids()) {
-            actionStatusLabel.setText("Auction is no longer accepting bids.");
-        }
+        bidChartXAxis.setLowerBound(0);
+        bidChartXAxis.setUpperBound(Math.max(2, series.getData().size() + 1));
+        bidChartXAxis.setTickUnit(1);
+        bidChart.getData().setAll(java.util.List.of(series));
+    }
+
+    private boolean canAcceptBids(AuctionView auction) {
+        return auction.getStatus() == AuctionStatus.RUNNING;
+    }
+
+    private String buildCountdownLabel(AuctionView auction) {
+        return switch (auction.getStatus()) {
+            case OPEN -> "Waiting for seller to start";
+            case RUNNING -> {
+                long secondsRemaining = Math.max(0, Duration.between(LocalDateTime.now(), auction.getEndTime()).getSeconds());
+                yield formatRemainingTime(secondsRemaining) + " remaining";
+            }
+            case FINISHED -> "Auction finished. Waiting for payment or cancellation.";
+            case PAID -> "Payment completed";
+            case CANCELED -> "Auction canceled";
+        };
+    }
+
+    private String formatRemainingTime(long totalSeconds) {
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     private void handleEventResponse(ServerResponse<?> response) {
         Platform.runLater(() -> {
-            actionStatusLabel.setText(response.getMessage());
-            if (response.getPayload() instanceof Auction auction) {
-                Auction cur = sessionModel.selectedAuctionProperty().get();
-                if (cur != null && cur.getId() == auction.getId()) {
-                    sessionModel.selectAuction(auction);
-                    renderAuction(auction);
-                }
+            if (!(response.getPayload() instanceof AuctionView auction)) {
+                return;
             }
+            AuctionView currentAuction = sessionModel.selectedAuctionProperty().get();
+            if (currentAuction == null || !currentAuction.getAuctionId().equals(auction.getAuctionId())) {
+                return;
+            }
+            actionStatusLabel.setText(response.getMessage());
+            sessionModel.selectAuction(auction);
+            renderAuction(auction);
         });
     }
 
-    private String extractMessage(Throwable t) {
-        Throwable c = t.getCause() == null ? t : t.getCause();
-        return c.getMessage() == null ? t.getMessage() : c.getMessage();
+    private String extractMessage(Throwable throwable) {
+        Throwable cause = throwable.getCause() == null ? throwable : throwable.getCause();
+        return cause.getMessage() == null ? throwable.getMessage() : cause.getMessage();
     }
 
-    private BigDecimal parseBidAmount(String rawValue) {
+    private double parseBidAmount(String rawValue) {
         if (rawValue == null || rawValue.isBlank()) {
             throw new IllegalArgumentException("Enter a bid amount.");
         }
@@ -253,9 +360,98 @@ public final class AuctionDetailController {
         }
 
         try {
-            return new BigDecimal(sanitized);
+            return Double.parseDouble(sanitized);
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException("Enter a valid bid amount.");
         }
+    }
+
+    private void restartCountdown() {
+        stopCountdown();
+        AuctionView selectedAuction = sessionModel.selectedAuctionProperty().get();
+        if (selectedAuction == null) {
+            countdownLabel.setText("-");
+            return;
+        }
+
+        countdownLabel.setText(buildCountdownLabel(selectedAuction));
+        if (!canAcceptBids(selectedAuction)) {
+            return;
+        }
+
+        countdownTimeline = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> {
+            AuctionView latestAuction = sessionModel.selectedAuctionProperty().get();
+            if (latestAuction == null) {
+                stopCountdown();
+                countdownLabel.setText("-");
+                return;
+            }
+            countdownLabel.setText(buildCountdownLabel(latestAuction));
+        }));
+        countdownTimeline.setCycleCount(Timeline.INDEFINITE);
+        countdownTimeline.play();
+    }
+
+    private void stopCountdown() {
+        if (countdownTimeline != null) {
+            countdownTimeline.stop();
+            countdownTimeline = null;
+        }
+    }
+
+    private String buildBidHint(AuctionView auction) {
+        if (auction == null) {
+            return "Auction details are still loading.";
+        }
+        if (currentUser.getRole() != UserRole.BIDDER) {
+            return "Only bidder accounts can place bids.";
+        }
+        if (auction.getStatus() == AuctionStatus.OPEN) {
+            return "Auction is OPEN and waiting for the seller to start it.";
+        }
+        if (auction.getStatus() == AuctionStatus.FINISHED) {
+            return "Auction is FINISHED. No more bids can be placed.";
+        }
+        if (auction.getStatus() == AuctionStatus.PAID) {
+            return "Auction is PAID and has been completed.";
+        }
+        if (auction.getStatus() == AuctionStatus.CANCELED) {
+            return "Auction was CANCELED.";
+        }
+        return "Place a bid of at least " + CURRENCY.format(auction.getMinimumNextBid()) + ".";
+    }
+
+    private String buildStatusLabel(AuctionView auction) {
+        return switch (auction.getStatus()) {
+            case OPEN -> "OPEN";
+            case RUNNING -> "RUNNING";
+            case FINISHED -> "FINISHED";
+            case PAID -> "PAID";
+            case CANCELED -> "CANCELED";
+        };
+    }
+
+    private String buildStatusStyle(AuctionView auction) {
+        return switch (auction.getStatus()) {
+            case OPEN -> "-fx-font-size: 11px; -fx-font-weight: bold; "
+                    + "-fx-text-fill: #5dcaa5; -fx-background-color: #173527; "
+                    + "-fx-padding: 4 10; -fx-border-radius: 999; -fx-background-radius: 999;";
+            case RUNNING -> "-fx-font-size: 11px; -fx-font-weight: bold; "
+                    + "-fx-text-fill: #f0c040; -fx-background-color: #3a2c14; "
+                    + "-fx-padding: 4 10; -fx-border-radius: 999; -fx-background-radius: 999;";
+            case FINISHED -> "-fx-font-size: 11px; -fx-font-weight: bold; "
+                    + "-fx-text-fill: #d6dcf0; -fx-background-color: #34384a; "
+                    + "-fx-padding: 4 10; -fx-border-radius: 999; -fx-background-radius: 999;";
+            case PAID -> "-fx-font-size: 11px; -fx-font-weight: bold; "
+                    + "-fx-text-fill: #8fe1b5; -fx-background-color: #173527; "
+                    + "-fx-padding: 4 10; -fx-border-radius: 999; -fx-background-radius: 999;";
+            case CANCELED -> "-fx-font-size: 11px; -fx-font-weight: bold; "
+                    + "-fx-text-fill: #f09595; -fx-background-color: #3a1e1e; "
+                    + "-fx-padding: 4 10; -fx-border-radius: 999; -fx-background-radius: 999;";
+        };
+    }
+
+    private String safeValue(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 }

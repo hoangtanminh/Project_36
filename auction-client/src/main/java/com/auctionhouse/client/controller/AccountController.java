@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
-public final class AccountController {
+public final class   AccountController {
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance(Locale.US);
 
     @FXML private Label accountNameLabel;
@@ -268,10 +268,10 @@ public final class AccountController {
             return;
         }
 
-        paymentItemLabel.setText(auction.item().name());
-        paymentAmountLabel.setText("Amount due: " + CURRENCY.format(auction.item().currentPrice()));
+        paymentItemLabel.setText(auction.getItem().getName());
+        paymentAmountLabel.setText("Amount due: " + CURRENCY.format(auction.getItem().getCurrentPrice()));
         paymentStateLabel.setText("Payment status: " + buildPaymentState(auction));
-        paymentWinnerLabel.setText("Winner: " + safeValue(auction.winnerName(), "Unknown"));
+        paymentWinnerLabel.setText("Winner: " + safeValue(auction.getWinnerName(), "Unknown"));
         payNowButton.setDisable(auction.getStatus() == AuctionStatus.PAID || !isCurrentUserWinner(auction));
     }
 
@@ -284,18 +284,18 @@ public final class AccountController {
             return;
         }
 
-        joinedTitleLabel.setText(auction.item().name());
+        joinedTitleLabel.setText(auction.getItem().getName());
         joinedStatusLabel.setText("Status: " + auction.getStatus().name());
-        joinedPriceLabel.setText("Current price: " + CURRENCY.format(auction.item().currentPrice()));
+        joinedPriceLabel.setText("Current price: " + CURRENCY.format(auction.getItem().getCurrentPrice()));
         joinedDetailLabel.setText(buildJoinedDetail(auction));
     }
 
     private boolean hasParticipated(AuctionView auction) {
-        if (auction == null || auction.bidHistory() == null) {
+        if (auction == null || auction.getBidHistory() == null) {
             return false;
         }
-        for (BidTransactionView bid : auction.bidHistory()) {
-            if (currentUser.getId().equals(bid.bidderId())) {
+        for (BidTransactionView bid : auction.getBidHistory()) {
+            if (currentUser.getId().equals(bid.getBidderId())) {
                 return true;
             }
         }
@@ -325,9 +325,9 @@ public final class AccountController {
         String highestBidText = auction.getHighestBid() == null
                 ? "No bids recorded"
                 : auction.getHighestBid().getBidderName() + " at " + CURRENCY.format(auction.getHighestBid().getAmount());
-        return safeValue(auction.item().description(), "No description")
+        return safeValue(auction.getItem().getDescription(), "No description")
                 + " | Top bid: " + highestBidText
-                + " | Winner: " + safeValue(auction.winnerName(), "Unknown");
+                + " | Winner: " + safeValue(auction.getWinnerName(), "Unknown");
     }
 
     private String buildRoleLabel(UserRole role) {
@@ -385,8 +385,8 @@ public final class AccountController {
                 return;
             }
 
-            titleLabel.setText(item.item().name());
-            metaLabel.setText(item.getStatus().name() + " | " + CURRENCY.format(item.item().currentPrice()));
+            titleLabel.setText(item.getItem().getName());
+            metaLabel.setText(item.getStatus().name() + " | " + CURRENCY.format(item.getItem().getCurrentPrice()));
             setGraphic(content);
             setStyle("-fx-background-color: #f6f3ee; -fx-background-radius: 14; "
                     + "-fx-border-color: #d7d1c7; -fx-border-radius: 14; -fx-padding: 10 12;");

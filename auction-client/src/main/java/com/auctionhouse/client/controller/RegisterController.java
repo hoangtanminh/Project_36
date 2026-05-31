@@ -1,11 +1,10 @@
-//register
 package com.auctionhouse.client.controller;
 
+import com.auction.shared.dto.UserView;
+import com.auction.shared.enums.UserRole;
+import com.auction.shared.protocol.RegisterRequest;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-import com.auctionhouse.shared.enums.UserRole;
-import com.auctionhouse.shared.model.User;
-import com.auctionhouse.shared.protocol.RegisterRequest;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -20,13 +19,21 @@ import java.util.concurrent.CompletableFuture;
 
 public final class RegisterController {
     @FXML
-    private TextField displayNameField;                 //JavaFx gán các biến từ fxml vào controller
+    private TextField displayNameField;
     @FXML
     private TextField usernameField;
     @FXML
     private PasswordField passwordField;
     @FXML
+    private TextField passwordVisibleField;
+    @FXML
+    private Button togglePasswordButton;
+    @FXML
     private PasswordField confirmPasswordField;
+    @FXML
+    private TextField confirmPasswordVisibleField;
+    @FXML
+    private Button toggleConfirmPasswordButton;
     @FXML
     private ChoiceBox<UserRole> roleChoice;
     @FXML
@@ -39,14 +46,20 @@ public final class RegisterController {
     private Label statusLabel;
     @FXML
     private Button registerButton;
+    @FXML
+    private Button backAfterSuccessButton;
 
     private AppCoordinator coordinator;
     private AuctionClientService clientService;
+    private boolean passwordVisible;
+    private boolean confirmPasswordVisible;
 
     public void init(AppCoordinator coordinator, AuctionClientService clientService) {
         this.coordinator = coordinator;
         this.clientService = clientService;
-        roleChoice.setConverter(new StringConverter<>() {   // converter giúp hiển thị UI của boxchoice đẹp hơn
+        passwordField.textProperty().bindBidirectional(passwordVisibleField.textProperty());
+        confirmPasswordField.textProperty().bindBidirectional(confirmPasswordVisibleField.textProperty());
+        roleChoice.setConverter(new StringConverter<>() {
             @Override
             public String toString(UserRole role) {
                 return formatRoleLabel(role);
@@ -57,12 +70,14 @@ public final class RegisterController {
                 return null;
             }
         });
-        roleChoice.getItems().setAll(UserRole.BIDDER, UserRole.SELLER);//set roleChoice gồm bidder và seller
-        roleChoice.setValue(UserRole.BIDDER);   //mặc định set là bidder
-        
-        // khi user đổi role thì gọi hàm updateRoleSelection
+        roleChoice.getItems().setAll(UserRole.BIDDER, UserRole.SELLER);
+        roleChoice.setValue(UserRole.BIDDER);
         roleChoice.getSelectionModel().selectedItemProperty()
                 .addListener((obs, oldValue, newValue) -> updateRoleSelection());
+        backAfterSuccessButton.setVisible(false);
+        backAfterSuccessButton.setManaged(false);
+        setPasswordVisibility(false);
+        setConfirmPasswordVisibility(false);
         updateRoleSelection();
         statusLabel.setText("Create a new account.");
     }
@@ -73,12 +88,15 @@ public final class RegisterController {
         String username = readText(usernameField);
         String password = readText(passwordField);
         String confirmPassword = readText(confirmPasswordField);
-        //nếu user chưa chọn thì để mặc định là Bidder
         UserRole role = roleChoice.getValue() == null ? UserRole.BIDDER : roleChoice.getValue();
         String storefrontName = readText(storefrontField);
 
         if (displayName.isBlank() || username.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
             statusLabel.setText("Fill all required register fields.");
+            return;
+        }
+        if (password.length() < 4) {
+            statusLabel.setText("Password must be at least 4 characters.");
             return;
         }
         if (!password.equals(confirmPassword)) {
@@ -96,7 +114,7 @@ public final class RegisterController {
         CompletableFuture.supplyAsync(() -> clientService.register(request))
                 .whenComplete((user, throwable) -> Platform.runLater(() -> finishRegister(user, throwable)));
     }
-    //back lại login
+
     @FXML
     private void goToLogin() {
         try {
@@ -105,21 +123,32 @@ public final class RegisterController {
             statusLabel.setText(exception.getMessage());
         }
     }
-    // kết qả của đăng kí
-    private void finishRegister(User user, Throwable throwable) {
-        registerButton.setDisable(false);   // mở lại nút bấm
+
+    @FXML
+    private void togglePasswordVisibility() {
+        setPasswordVisibility(!passwordVisible);
+    }
+
+    @FXML
+    private void toggleConfirmPasswordVisibility() {
+        setConfirmPasswordVisibility(!confirmPasswordVisible);
+    }
+
+    private void finishRegister(UserView user, Throwable throwable) {
+        registerButton.setDisable(false);
         if (throwable != null) {
-            statusLabel.setText(extractMessage(throwable)); //có lỗi thì dừng và hiện massage
+            statusLabel.setText(extractMessage(throwable));
             return;
         }
 
-        try {
-            coordinator.showDashboard(user);
-        } catch (Exception exception) {
-            statusLabel.setText(exception.getMessage());
-        }
+        passwordField.clear();
+        confirmPasswordField.clear();
+        registerButton.setDisable(true);
+        backAfterSuccessButton.setVisible(true);
+        backAfterSuccessButton.setManaged(true);
+        statusLabel.setText("Account created successfully for " + user.getName() + ". Click Back to sign in.");
     }
-    // chọn chức năng cho account
+
     private void updateRoleSelection() {
         UserRole selectedRole = roleChoice.getValue();
         boolean sellerSelected = selectedRole == UserRole.SELLER;
@@ -127,22 +156,21 @@ public final class RegisterController {
         storefrontBox.setManaged(sellerSelected);
         roleDescriptionLabel.setText(buildRoleDescription(selectedRole));
         if (!sellerSelected) {
-            storefrontField.clear();        // xóa shop name tránh trường hợp khi đổi lại sang bidder dữ liệu còn
+            storefrontField.clear();
         }
     }
 
     private String formatRoleLabel(UserRole role) {
         if (role == null) {
-            return "";          
+            return "";
         }
         return switch (role) {
-            case BIDDER -> "Bidder Account";        // đổi hiện thị tương ứng với các chức năng
+            case BIDDER -> "Bidder Account";
             case SELLER -> "Seller Account";
             case ADMIN -> "Admin Account";
         };
     }
 
-    // trả về mô tả chi tiết của chức năng
     private String buildRoleDescription(UserRole role) {
         if (role == null) {
             return "";
@@ -155,12 +183,36 @@ public final class RegisterController {
     }
 
     private String readText(TextField textField) {
-        return textField.getText() == null ? "" : textField.getText().trim();   //lấy text đẹp
+        return textField.getText() == null ? "" : textField.getText().trim();
     }
 
-    //lấy massage lỗi
     private String extractMessage(Throwable throwable) {
         Throwable cause = throwable.getCause() == null ? throwable : throwable.getCause();
         return cause.getMessage() == null ? throwable.getMessage() : cause.getMessage();
+    }
+
+    private void setPasswordVisibility(boolean visible) {
+        passwordVisible = visible;
+        passwordField.setVisible(!visible);
+        passwordField.setManaged(!visible);
+        passwordVisibleField.setVisible(visible);
+        passwordVisibleField.setManaged(visible);
+        togglePasswordButton.setText(visible ? "🙈" : "👁");
+        positionCaret(passwordVisibleField, passwordField, visible);
+    }
+
+    private void setConfirmPasswordVisibility(boolean visible) {
+        confirmPasswordVisible = visible;
+        confirmPasswordField.setVisible(!visible);
+        confirmPasswordField.setManaged(!visible);
+        confirmPasswordVisibleField.setVisible(visible);
+        confirmPasswordVisibleField.setManaged(visible);
+        toggleConfirmPasswordButton.setText(visible ? "🙈" : "👁");
+        positionCaret(confirmPasswordVisibleField, confirmPasswordField, visible);
+    }
+
+    private void positionCaret(TextField visibleField, TextField hiddenField, boolean showingVisibleField) {
+        TextField activeField = showingVisibleField ? visibleField : hiddenField;
+        activeField.positionCaret(activeField.getText() == null ? 0 : activeField.getText().length());
     }
 }
