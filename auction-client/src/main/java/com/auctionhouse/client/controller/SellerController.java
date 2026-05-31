@@ -8,6 +8,7 @@ import com.auction.shared.protocol.CreateAuctionRequest;
 import com.auction.shared.protocol.UpdateAuctionRequest;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -451,3 +452,4 @@ public final class SellerController {
         T get() throws Exception;
     }
 }
+

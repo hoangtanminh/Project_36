@@ -5,6 +5,7 @@ import com.auction.shared.enums.UserRole;
 import com.auction.shared.protocol.RegisterRequest;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -216,3 +217,4 @@ public final class RegisterController {
         activeField.positionCaret(activeField.getText() == null ? 0 : activeField.getText().length());
     }
 }
+

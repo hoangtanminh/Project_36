@@ -10,8 +10,10 @@ import com.auction.shared.protocol.ServerResponse;
 import com.auctionhouse.client.model.SessionModel;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -484,3 +486,4 @@ public final class DashboardController {
         FINISHED
     }
 }
+

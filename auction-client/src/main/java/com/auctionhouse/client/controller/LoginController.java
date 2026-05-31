@@ -3,6 +3,7 @@ package com.auctionhouse.client.controller;
 import com.auction.shared.dto.UserView;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -125,3 +126,4 @@ public final class LoginController {
         activeField.positionCaret(activeField.getText() == null ? 0 : activeField.getText().length());
     }
 }
+

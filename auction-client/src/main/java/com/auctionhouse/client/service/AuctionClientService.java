@@ -1,5 +1,6 @@
 package com.auctionhouse.client.service;
 
+
 import com.auction.shared.dto.AuctionView;
 import com.auction.shared.dto.DashboardView;
 import com.auction.shared.dto.UserView;
@@ -9,11 +10,14 @@ import com.auction.shared.protocol.AuctionActionRequest;
 import com.auction.shared.protocol.AuctionSelectionRequest;
 import com.auction.shared.protocol.AuctionSubscriptionRequest;
 import com.auction.shared.protocol.AutoBidRequest;
+
 import com.auction.shared.protocol.BidRequest;
 import com.auction.shared.protocol.ClientRequest;
 import com.auction.shared.protocol.CreateAuctionRequest;
 import com.auction.shared.protocol.DashboardRequest;
+
 import com.auction.shared.protocol.DepositFundsRequest;
+
 import com.auction.shared.protocol.LoginRequest;
 import com.auction.shared.protocol.LogoutRequest;
 import com.auction.shared.protocol.RegisterRequest;
@@ -66,10 +70,12 @@ public final class AuctionClientService implements Closeable {
         return userView;
     }
 
+
     public DashboardView loadDashboard(String userId) {
         return expectPayload(sendAndAwait(new ClientRequest<>(
                 CommandType.LOAD_DASHBOARD,
                 new DashboardRequest(userId))), DashboardView.class);
+
     }
 
     public AuctionView loadAuction(String auctionId) {
@@ -255,3 +261,4 @@ public final class AuctionClientService implements Closeable {
         socket = null;
     }
 }
+

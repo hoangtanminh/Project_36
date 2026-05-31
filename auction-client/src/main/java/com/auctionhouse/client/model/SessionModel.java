@@ -1,16 +1,19 @@
 package com.auctionhouse.client.model;
 
+
 import com.auction.shared.dto.AuctionMetrics;
 import com.auction.shared.dto.AuctionView;
 import com.auction.shared.dto.BidTransactionView;
 import com.auction.shared.dto.DashboardView;
 import com.auction.shared.dto.UserView;
+
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.util.List;
+
 
 public final class SessionModel {
     private final ObjectProperty<UserView> currentUser = new SimpleObjectProperty<UserView>();
@@ -31,6 +34,7 @@ public final class SessionModel {
         replaceAuctions(sellerAuctions, data.sellerAuctions());
         metrics.setValue(data.metrics());
         refreshSelection();
+
     }
 
     public void selectAuction(AuctionView auction) {
@@ -117,3 +121,4 @@ public final class SessionModel {
         return bidHistory;
     }
 }
+
