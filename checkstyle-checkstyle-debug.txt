@@ -1,0 +1,66 @@
+﻿[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] BaiTap                                                             [pom]
+[INFO] auction-shared                                                     [jar]
+[INFO] Auction Server                                                     [jar]
+[INFO] Auction Client                                                     [jar]
+[INFO] 
+[INFO] -------------------------< org.example:BaiTap >-------------------------
+[INFO] Building BaiTap 1.0-SNAPSHOT                                       [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:checkstyle (default-cli) @ BaiTap ---
+[INFO] Skipping org.apache.maven.plugins:maven-checkstyle-plugin:3.6.0:checkstyle report goal
+[INFO] 
+[INFO] ---------------------< org.example:auction-shared >---------------------
+[INFO] Building auction-shared 1.0-SNAPSHOT                               [2/4]
+[INFO]   from auction-shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:checkstyle (default-cli) @ auction-shared ---
+[INFO] Rendering content with org.apache.maven.skins:maven-fluido-skin:jar:2.0.0-M9 skin
+[INFO] Starting audit...
+Audit done.
+[WARNING] Unable to locate Source XRef to link to -- DISABLED
+[WARNING] Unable to locate Test Source XRef to link to -- DISABLED
+[INFO] 
+[INFO] ---------------------< org.example:auction-server >---------------------
+[INFO] Building Auction Server 1.0-SNAPSHOT                               [3/4]
+[INFO]   from auction-server\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:checkstyle (default-cli) @ auction-server ---
+[INFO] Rendering content with org.apache.maven.skins:maven-fluido-skin:jar:2.0.0-M9 skin
+[INFO] Starting audit...
+Audit done.
+[WARNING] Unable to locate Source XRef to link to -- DISABLED
+[WARNING] Unable to locate Test Source XRef to link to -- DISABLED
+[INFO] 
+[INFO] ---------------------< org.example:auction-client >---------------------
+[INFO] Building Auction Client 1.0-SNAPSHOT                               [4/4]
+[INFO]   from auction-client\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] 6 problems were encountered while building the effective model for org.openjfx:javafx-controls:jar:17.0.2 during dependency collection step for project (use -X to see details)
+[INFO] 
+[INFO] --- checkstyle:3.6.0:checkstyle (default-cli) @ auction-client ---
+[INFO] Rendering content with org.apache.maven.skins:maven-fluido-skin:jar:2.0.0-M9 skin
+[INFO] Starting audit...
+Audit done.
+[WARNING] Unable to locate Source XRef to link to -- DISABLED
+[WARNING] Unable to locate Test Source XRef to link to -- DISABLED
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for BaiTap 1.0-SNAPSHOT:
+[INFO] 
+[INFO] BaiTap ............................................. SUCCESS [  0.953 s]
+[INFO] auction-shared ..................................... SUCCESS [  0.474 s]
+[INFO] Auction Server ..................................... SUCCESS [  0.098 s]
+[INFO] Auction Client ..................................... SUCCESS [  0.098 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.793 s
+[INFO] Finished at: 2026-05-31T18:23:11+07:00
+[INFO] ------------------------------------------------------------------------

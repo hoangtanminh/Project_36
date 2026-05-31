@@ -1,0 +1,61 @@
+﻿[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] BaiTap                                                             [pom]
+[INFO] auction-shared                                                     [jar]
+[INFO] Auction Server                                                     [jar]
+[INFO] Auction Client                                                     [jar]
+[INFO] 
+[INFO] -------------------------< org.example:BaiTap >-------------------------
+[INFO] Building BaiTap 1.0-SNAPSHOT                                       [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:check (default-cli) @ BaiTap ---
+[INFO] Starting audit...
+Audit done.
+[INFO] You have 0 Checkstyle violations.
+[INFO] 
+[INFO] ---------------------< org.example:auction-shared >---------------------
+[INFO] Building auction-shared 1.0-SNAPSHOT                               [2/4]
+[INFO]   from auction-shared\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:check (default-cli) @ auction-shared ---
+[INFO] Starting audit...
+Audit done.
+[INFO] You have 0 Checkstyle violations.
+[INFO] 
+[INFO] ---------------------< org.example:auction-server >---------------------
+[INFO] Building Auction Server 1.0-SNAPSHOT                               [3/4]
+[INFO]   from auction-server\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:check (default-cli) @ auction-server ---
+[INFO] Starting audit...
+Audit done.
+[INFO] You have 0 Checkstyle violations.
+[INFO] 
+[INFO] ---------------------< org.example:auction-client >---------------------
+[INFO] Building Auction Client 1.0-SNAPSHOT                               [4/4]
+[INFO]   from auction-client\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:check (default-cli) @ auction-client ---
+[INFO] Starting audit...
+Audit done.
+[INFO] You have 0 Checkstyle violations.
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for BaiTap 1.0-SNAPSHOT:
+[INFO] 
+[INFO] BaiTap ............................................. SUCCESS [  1.080 s]
+[INFO] auction-shared ..................................... SUCCESS [  0.029 s]
+[INFO] Auction Server ..................................... SUCCESS [  0.020 s]
+[INFO] Auction Client ..................................... SUCCESS [  0.021 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.320 s
+[INFO] Finished at: 2026-05-31T18:21:18+07:00
+[INFO] ------------------------------------------------------------------------

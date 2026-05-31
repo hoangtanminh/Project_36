@@ -22,10 +22,10 @@ jobs:
         cache: maven
     # Step 3: Run Checkstyle (Fail on violations)
     - name: Run Checkstyle (Fail on violations)
-      run: mvn checkstyle:check
+      run: mvn -B -am checkstyle:check
     # Step 4: Generate Checkstyle Report
     - name: Generate Checkstyle Report
-      run: mvn checkstyle:checkstyle
+      run: mvn -B -am checkstyle:checkstyle
     # Step 5: Upload Checkstyle Report
     - name: Upload Checkstyle Report
       uses: actions/upload-artifact@v4
