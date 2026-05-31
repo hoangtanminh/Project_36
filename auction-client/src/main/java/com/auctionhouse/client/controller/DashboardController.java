@@ -3,12 +3,12 @@ package com.auctionhouse.client.controller;
 import com.auctionhouse.client.model.SessionModel;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-import com.auctionhouse.shared.enums.AuctionEventType;
-import com.auctionhouse.shared.enums.UserRole;
-import com.auctionhouse.shared.model.Auction;
-import com.auctionhouse.shared.model.AuctionMetrics;
-import com.auctionhouse.shared.model.User;
-import com.auctionhouse.shared.protocol.ServerResponse;
+import com.auction.shared.enums.AuctionEventType;
+import com.auction.shared.enums.UserRole;
+import com.auction.model.Auction;
+import com.auction.shared.dto.AuctionMetrics;
+import com.auction.model.User;
+import com.auction.shared.protocol.ServerResponse;
 import javafx.application.Platform;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
@@ -227,3 +227,4 @@ public final class DashboardController {
         return cause.getMessage() == null ? throwable.getMessage() : cause.getMessage();
     }
 }
+

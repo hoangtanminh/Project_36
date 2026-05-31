@@ -1,24 +1,24 @@
 //service
 package com.auctionhouse.client.service;
 
-import com.auctionhouse.shared.enums.CommandType;
-import com.auctionhouse.shared.enums.ResponseStatus;
-import com.auctionhouse.shared.model.Auction;
-import com.auctionhouse.shared.model.DashboardData;
-import com.auctionhouse.shared.model.User;
-import com.auctionhouse.shared.protocol.AuctionActionRequest;
-import com.auctionhouse.shared.protocol.AuctionSelectionRequest;
-import com.auctionhouse.shared.protocol.AuctionStatusChangeRequest;
-import com.auctionhouse.shared.protocol.AuctionSubscriptionRequest;
-import com.auctionhouse.shared.protocol.BidRequest;
-import com.auctionhouse.shared.protocol.ClientRequest;
-import com.auctionhouse.shared.protocol.CreateAuctionRequest;
-import com.auctionhouse.shared.protocol.DashboardRequest;
-import com.auctionhouse.shared.protocol.LoginRequest;
-import com.auctionhouse.shared.protocol.LogoutRequest;
-import com.auctionhouse.shared.protocol.RegisterRequest;
-import com.auctionhouse.shared.protocol.ServerResponse;
-import com.auctionhouse.shared.protocol.UpdateAuctionRequest;
+import com.auction.shared.enums.CommandType;
+import com.auction.shared.enums.ResponseStatus;
+import com.auction.model.Auction;
+import com.auction.shared.dto.DashboardView;
+import com.auction.model.User;
+import com.auction.shared.protocol.AuctionActionRequest;
+import com.auction.shared.protocol.AuctionSelectionRequest;
+import com.auction.shared.protocol.AuctionStatusChangeRequest;
+import com.auction.shared.protocol.AuctionSubscriptionRequest;
+import com.auction.shared.protocol.BidRequest;
+import com.auction.shared.protocol.ClientRequest;
+import com.auction.shared.protocol.CreateAuctionRequest;
+import com.auction.shared.protocol.DashboardRequest;
+import com.auction.shared.protocol.LoginRequest;
+import com.auction.shared.protocol.LogoutRequest;
+import com.auction.shared.protocol.RegisterRequest;
+import com.auction.shared.protocol.ServerResponse;
+import com.auction.shared.protocol.UpdateAuctionRequest;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -62,8 +62,8 @@ public final class AuctionClientService implements Closeable {
         return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.REGISTER, request)), User.class);
     }
 
-    public DashboardData loadDashboard(String username) {
-        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.LOAD_DASHBOARD, new DashboardRequest(username))), DashboardData.class);
+    public DashboardView loadDashboard(String username) {
+        return expectPayload(sendAndAwait(new ClientRequest<>(CommandType.LOAD_DASHBOARD, new DashboardRequest(username))), DashboardView.class);
     }
 
     public Auction loadAuction(long auctionId) {
@@ -177,3 +177,4 @@ public final class AuctionClientService implements Closeable {
         }
     }
 }
+

@@ -6,8 +6,8 @@ import com.auctionhouse.client.controller.LoginController;
 import com.auctionhouse.client.controller.RegisterController;
 import com.auctionhouse.client.controller.SellerController;
 import com.auctionhouse.client.service.AuctionClientService;
-import com.auctionhouse.shared.model.Auction;
-import com.auctionhouse.shared.model.User;
+import com.auction.model.Auction;
+import com.auction.model.User;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -90,3 +90,4 @@ public final class AppCoordinator {
         stage.show();
     }
 }
+

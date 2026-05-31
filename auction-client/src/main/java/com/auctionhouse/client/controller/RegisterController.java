@@ -3,9 +3,9 @@ package com.auctionhouse.client.controller;
 
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-import com.auctionhouse.shared.enums.UserRole;
-import com.auctionhouse.shared.model.User;
-import com.auctionhouse.shared.protocol.RegisterRequest;
+import com.auction.shared.enums.UserRole;
+import com.auction.model.User;
+import com.auction.shared.protocol.RegisterRequest;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -164,3 +164,4 @@ public final class RegisterController {
         return cause.getMessage() == null ? throwable.getMessage() : cause.getMessage();
     }
 }
+

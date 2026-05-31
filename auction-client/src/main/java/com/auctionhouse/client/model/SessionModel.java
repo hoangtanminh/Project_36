@@ -1,10 +1,10 @@
 package com.auctionhouse.client.model;
 
-import com.auctionhouse.shared.model.Auction;
-import com.auctionhouse.shared.model.AuctionMetrics;
-import com.auctionhouse.shared.model.Bid;
-import com.auctionhouse.shared.model.DashboardData;
-import com.auctionhouse.shared.model.User;
+import com.auction.model.Auction;
+import com.auction.shared.dto.AuctionMetrics;
+import com.auction.model.Bid;
+import com.auction.shared.dto.DashboardView;
+import com.auction.model.User;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -21,7 +21,7 @@ public final class SessionModel {
     private final ObservableList<Bid> bidHistory = FXCollections.observableArrayList();
     private final StringProperty toastMessage = new SimpleStringProperty("");
 
-    public void applyDashboard(DashboardData data) {
+    public void applyDashboard(DashboardView data) {
         currentUser.set(data.currentUser());
         liveAuctions.setAll(data.liveAuctions());
         sellerAuctions.setAll(data.sellerAuctions());
@@ -65,3 +65,4 @@ public final class SessionModel {
         return toastMessage;
     }
 }
+

@@ -3,15 +3,15 @@ package com.auctionhouse.client.controller;
 import com.auctionhouse.client.model.SessionModel;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-import com.auctionhouse.shared.enums.AuctionStatus;
-import com.auctionhouse.shared.enums.UserRole;
-import com.auctionhouse.shared.model.Auction;
-import com.auctionhouse.shared.model.Bid;
-import com.auctionhouse.shared.model.BuyNowAuction;
-import com.auctionhouse.shared.model.User;
-import com.auctionhouse.shared.protocol.AuctionSubscriptionRequest;
-import com.auctionhouse.shared.protocol.BidRequest;
-import com.auctionhouse.shared.protocol.ServerResponse;
+import com.auction.model.AuctionStatus;
+import com.auction.shared.enums.UserRole;
+import com.auction.model.Auction;
+import com.auction.model.Bid;
+import com.auction.model.Auction;
+import com.auction.model.User;
+import com.auction.shared.protocol.AuctionSubscriptionRequest;
+import com.auction.shared.protocol.BidRequest;
+import com.auction.shared.protocol.ServerResponse;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -259,3 +259,4 @@ public final class AuctionDetailController {
         }
     }
 }
+
