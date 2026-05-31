@@ -11,20 +11,10 @@ import com.auction.shared.protocol.ServerResponse;
 import com.auctionhouse.client.model.SessionModel;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-<<<<<<< HEAD
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-=======
-import com.auction.model.AuctionStatus;
-import com.auction.shared.enums.UserRole;
-import com.auction.model.Auction;
-import com.auction.model.Bid;
-import com.auction.model.Auction;
-import com.auction.model.User;
-import com.auction.shared.protocol.AuctionSubscriptionRequest;
-import com.auction.shared.protocol.BidRequest;
-import com.auction.shared.protocol.ServerResponse;
->>>>>>> 1903a9ee05ae0f7587f29a7433de412de7c9f316
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
