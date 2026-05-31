@@ -70,9 +70,10 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
-                    <configLocation>${project.basedir}/config/checkstyle/checkstyle.xml</configLocation>
+                    <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</configLocation>
                     <consoleOutput>true</consoleOutput>
-                    <failsOnError>false</failsOnError>
+                    <failsOnError>true</failsOnError>
+                    <outputFile>${maven.multiModuleProjectDirectory}/target/checkstyle/checkstyle-report.xml</outputFile>
                 </configuration>
             </plugin>
         </plugins>
