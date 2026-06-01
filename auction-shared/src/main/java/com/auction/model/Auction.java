@@ -8,75 +8,137 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Represents an auction item being bid on.
- */
 public class Auction implements Subject {
+  private static final double DEFAULT_BID_INCREMENT = 0.1d;
+  private static final long EXTENSION_THRESHOLD_SECONDS = 10L;
+  private static final long EXTENSION_SECONDS = 30L;
 
   private final String auctionId;
   private final Item item;
+  private final double bidIncrement;
+  private final Duration auctionDuration;
   private Bid highestBid;
   private AuctionStatus status;
 
-  private final LocalDateTime startTime;
+  private LocalDateTime startTime;
   private volatile LocalDateTime endTime;
   private ScheduledExecutorService scheduler;
   private final List<Observer> observers = new CopyOnWriteArrayList<>();
   private final List<BidTransaction> bidHistory = new ArrayList<>();
 
-  /**
-   * Constructs an auction.
-   *
-   * @param auctionId The auction id.
-   * @param item The item.
-   * @param startTime The start time.
-   * @param endTime The end time.
-   */
   public Auction(String auctionId, Item item, LocalDateTime startTime, LocalDateTime endTime) {
+    this(auctionId, item, startTime, endTime, DEFAULT_BID_INCREMENT);
+  }
+
+  public Auction(String auctionId, Item item, LocalDateTime startTime, LocalDateTime endTime, double bidIncrement) {
+    this(auctionId, item, startTime, endTime, bidIncrement, null, null, List.of());
+  }
+
+  private Auction(
+          String auctionId,
+          Item item,
+          LocalDateTime startTime,
+          LocalDateTime endTime,
+          double bidIncrement,
+          AuctionStatus status,
+          Bid highestBid,
+          List<BidTransaction> bidHistory) {
     this.auctionId = auctionId;
     this.item = item;
     this.startTime = startTime;
     this.endTime = endTime;
-    this.status = AuctionStatus.OPEN;
-    startAutoClose();
+    this.bidIncrement = normalizeBidIncrement(bidIncrement);
+    this.auctionDuration = normalizeAuctionDuration(startTime, endTime);
+    if (status == null) {
+      LocalDateTime now = LocalDateTime.now();
+      if (endTime.isBefore(now) || endTime.isEqual(now)) {
+        this.status = AuctionStatus.FINISHED;
+      } else if (startTime.isAfter(now)) {
+        this.status = AuctionStatus.OPEN;
+      } else {
+        this.status = AuctionStatus.RUNNING;
+      }
+    } else {
+      this.status = status;
+    }
+    this.highestBid = highestBid;
+    if (bidHistory != null && !bidHistory.isEmpty()) {
+      this.bidHistory.addAll(bidHistory);
+    }
+    if (this.status == AuctionStatus.RUNNING) {
+      startAutoClose();
+    }
   }
 
-  /**
-   * Places a bid on the auction.
-   *
-   * @param bid The bid.
-   */
+  public static Auction restore(
+          String auctionId,
+          Item item,
+          LocalDateTime startTime,
+          LocalDateTime endTime,
+          double bidIncrement,
+          AuctionStatus status,
+          Bid highestBid,
+          List<BidTransaction> bidHistory,
+          double currentPrice) {
+    item.restoreCurrentPrice(currentPrice);
+    return new Auction(auctionId, item, startTime, endTime, bidIncrement, status, highestBid, bidHistory);
+  }
+
   public synchronized void placeBid(Bid bid) {
-    if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
-      throw new IllegalStateException("Auction is not open for bidding");
+    if (status != AuctionStatus.RUNNING) {
+      throw new com.auction.model.exception.AuctionClosedException(auctionId, status);
+    }
+    if (bid == null || bid.getBidder() == null) {
+      throw new IllegalArgumentException("Bid and bidder are required.");
+    }
+    if (bid.getAmount() <= 0) {
+      throw new com.auction.model.exception.InvalidBidException(item.getCurrentPrice(), bid.getAmount());
+    }
+    if (highestBid != null
+            && highestBid.getBidder().getId().equals(bid.getBidder().getId())
+            && Double.compare(highestBid.getAmount(), bid.getAmount()) == 0) {
+      throw new com.auction.model.exception.DuplicateBidException(auctionId, bid.getBidder().getId(), bid.getAmount());
     }
 
-    if (bid.getAmount() <= item.getCurrentPrice()) {
-      throw new IllegalArgumentException("Bid must be higher than current price: "
-          + item.getCurrentPrice());
+    double minimumRequiredBid = getMinimumNextBid();
+    if (Double.compare(bid.getAmount(), minimumRequiredBid) < 0) {
+      throw new com.auction.model.exception.InvalidBidException(item.getCurrentPrice(), bid.getAmount());
     }
 
     long secondsLeft = Duration.between(LocalDateTime.now(), endTime).getSeconds();
-    if (secondsLeft <= 10) {
-      endTime = endTime.plusSeconds(30);
+    if (secondsLeft <= EXTENSION_THRESHOLD_SECONDS) {
+      endTime = endTime.plusSeconds(EXTENSION_SECONDS);
       System.out.println("Auction extended by 30 seconds! New end time: " + endTime);
       restartScheduler();
     }
 
     item.setCurrentPrice(bid.getAmount());
     highestBid = bid;
-    status = AuctionStatus.RUNNING;
     bidHistory.add(new BidTransaction(auctionId, bid));
     notifyObservers();
 
-    System.out.println("New highest bid: " + bid.getAmount()
-        + " by " + bid.getBidder().getName());
+    System.out.println("New highest bid: " + bid.getAmount() + " by " + bid.getBidder().getName());
+  }
+
+  public synchronized void startAuction() {
+    if (status == AuctionStatus.RUNNING) {
+      return;
+    }
+    if (status != AuctionStatus.OPEN) {
+      throw new IllegalStateException("Only OPEN auctions can be started.");
+    }
+    startTime = LocalDateTime.now();
+    endTime = startTime.plus(auctionDuration);
+    status = AuctionStatus.RUNNING;
+    restartScheduler();
+    notifyObservers();
   }
 
   private void startAutoClose() {
-    scheduler = Executors.newSingleThreadScheduledExecutor();
+    scheduler = Executors.newSingleThreadScheduledExecutor(buildDaemonSchedulerFactory());
     long delay = Duration.between(LocalDateTime.now(), endTime).toMillis();
     if (delay <= 0) {
       closeAuction();
@@ -95,21 +157,8 @@ public class Auction implements Subject {
     startAutoClose();
   }
 
-  /**
-   * Shutdown the internal scheduler used for auto-closing the auction.
-   * Exposed to allow external management of scheduler lifecycle.
-   */
-  public void shutdownScheduler() {
-    if (scheduler != null && !scheduler.isShutdown()) {
-      scheduler.shutdownNow();
-    }
-  }
-
-  /**
-   * Closes the auction.
-   */
   public synchronized void closeAuction() {
-    if (status == AuctionStatus.FINISHED || status == AuctionStatus.CANCELED) {
+    if (status == AuctionStatus.FINISHED || status == AuctionStatus.CANCELED || status == AuctionStatus.PAID) {
       return;
     }
     status = AuctionStatus.FINISHED;
@@ -119,9 +168,6 @@ public class Auction implements Subject {
     notifyObservers();
   }
 
-  /**
-   * Cancels the auction.
-   */
   public synchronized void cancelAuction() {
     status = AuctionStatus.CANCELED;
     if (scheduler != null && !scheduler.isShutdown()) {
@@ -130,13 +176,16 @@ public class Auction implements Subject {
     notifyObservers();
   }
 
-  /**
-   * Marks the auction as paid.
-   */
   public synchronized void markPaid() {
     if (status == AuctionStatus.FINISHED) {
       status = AuctionStatus.PAID;
       notifyObservers();
+    }
+  }
+
+  public synchronized void shutdownScheduler() {
+    if (scheduler != null && !scheduler.isShutdown()) {
+      scheduler.shutdownNow();
     }
   }
 
@@ -185,7 +234,32 @@ public class Auction implements Subject {
     return endTime;
   }
 
+  public double getBidIncrement() {
+    return bidIncrement;
+  }
+
+  public double getMinimumNextBid() {
+    return item.getCurrentPrice() + bidIncrement;
+  }
+
   public List<BidTransaction> getBidHistory() {
     return Collections.unmodifiableList(bidHistory);
+  }
+
+  private ThreadFactory buildDaemonSchedulerFactory() {
+    return runnable -> {
+      Thread thread = new Thread(runnable, "auction-" + auctionId + "-scheduler");
+      thread.setDaemon(true);
+      return thread;
+    };
+  }
+
+  private double normalizeBidIncrement(double bidIncrement) {
+    return bidIncrement > 0 ? bidIncrement : DEFAULT_BID_INCREMENT;
+  }
+
+  private Duration normalizeAuctionDuration(LocalDateTime startTime, LocalDateTime endTime) {
+    Duration duration = Duration.between(startTime, endTime);
+    return duration.isNegative() || duration.isZero() ? Duration.ofMinutes(1) : duration;
   }
 }

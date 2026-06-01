@@ -12,7 +12,6 @@ public class ItemFactory {
     ) {
 
         switch (type) {
-
             case ELECTRONICS:
                 int warranty = (int) extra[0];
                 return new Electronics(id, name, description, startingPrice, warranty);
@@ -22,8 +21,8 @@ public class ItemFactory {
                 return new Art(id, name, description, startingPrice, artist);
 
             case CLOTHING:
-                String sizeLabel = (String) extra[0];
-                return new Clothing(id, name, description, startingPrice, sizeLabel);
+                String size = (String) extra[0];
+                return new Clothing(id, name, description, startingPrice, size);
 
             default:
                 throw new RuntimeException("Invalid item type");

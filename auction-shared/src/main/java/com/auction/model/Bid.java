@@ -9,9 +9,13 @@ public class Bid {
     private final LocalDateTime timestamp;
 
     public Bid(Bidder bidder, double amount) {
+        this(bidder, amount, LocalDateTime.now());
+    }
+
+    public Bid(Bidder bidder, double amount, LocalDateTime timestamp) {
         this.bidder = bidder;
         this.amount = amount;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp == null ? LocalDateTime.now() : timestamp;
     }
 
     public double getAmount() {

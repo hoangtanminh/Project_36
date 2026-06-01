@@ -7,7 +7,8 @@ import java.io.Serializable;
 public record UserView(
         String id,
         String name,
-        UserRole role) implements Serializable {
+        UserRole role,
+        double balance) implements Serializable {
 
     public String getId() {
         return id;
@@ -21,9 +22,7 @@ public record UserView(
         return role;
     }
 
-    // compatibility aliases used by client
-    public String getDisplayName() { return name; }
-    public String getRoleLabel() { return role == null ? "" : role.name(); }
-    public String getUsername() { return id; }
-    public double getBalance() { return 0.0; }
+    public double getBalance() {
+        return balance;
+    }
 }

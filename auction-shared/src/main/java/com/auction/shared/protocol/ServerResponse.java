@@ -1,5 +1,5 @@
 package com.auction.shared.protocol;
-
+//  respone của seber trả về cho client
 import com.auction.shared.enums.AuctionEventType;
 import com.auction.shared.enums.ResponseStatus;
 

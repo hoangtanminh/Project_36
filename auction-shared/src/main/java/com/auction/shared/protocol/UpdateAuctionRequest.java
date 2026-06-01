@@ -9,8 +9,21 @@ public record UpdateAuctionRequest(
         String itemName,
         String description,
         double startingPrice,
+        double bidIncrement,
         int durationMinutes,
         String extraValue) implements Serializable {
+
+    public UpdateAuctionRequest(
+            String auctionId,
+            String sellerId,
+            String itemType,
+            String itemName,
+            String description,
+            double startingPrice,
+            int durationMinutes,
+            String extraValue) {
+        this(auctionId, sellerId, itemType, itemName, description, startingPrice, 0.1d, durationMinutes, extraValue);
+    }
 
     public String getAuctionId() {
         return auctionId;
@@ -36,6 +49,10 @@ public record UpdateAuctionRequest(
         return startingPrice;
     }
 
+    public double getBidIncrement() {
+        return bidIncrement;
+    }
+
     public int getDurationMinutes() {
         return durationMinutes;
     }
@@ -45,6 +62,15 @@ public record UpdateAuctionRequest(
     }
 
     public UpdateAuctionRequest withSellerId(String normalizedSellerId) {
-        return new UpdateAuctionRequest(auctionId, normalizedSellerId, itemType, itemName, description, startingPrice, durationMinutes, extraValue);
+        return new UpdateAuctionRequest(
+                auctionId,
+                normalizedSellerId,
+                itemType,
+                itemName,
+                description,
+                startingPrice,
+                bidIncrement,
+                durationMinutes,
+                extraValue);
     }
 }

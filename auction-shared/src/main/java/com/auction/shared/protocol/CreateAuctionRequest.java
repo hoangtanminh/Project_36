@@ -8,8 +8,20 @@ public record CreateAuctionRequest(
         String itemName,
         String description,
         double startingPrice,
+        double bidIncrement,
         int durationMinutes,
         String extraValue) implements Serializable {
+
+    public CreateAuctionRequest(
+            String sellerId,
+            String itemType,
+            String itemName,
+            String description,
+            double startingPrice,
+            int durationMinutes,
+            String extraValue) {
+        this(sellerId, itemType, itemName, description, startingPrice, 0.1d, durationMinutes, extraValue);
+    }
 
     public String getSellerId() {
         return sellerId;
@@ -31,6 +43,10 @@ public record CreateAuctionRequest(
         return startingPrice;
     }
 
+    public double getBidIncrement() {
+        return bidIncrement;
+    }
+
     public int getDurationMinutes() {
         return durationMinutes;
     }
@@ -40,6 +56,14 @@ public record CreateAuctionRequest(
     }
 
     public CreateAuctionRequest withSellerId(String normalizedSellerId) {
-        return new CreateAuctionRequest(normalizedSellerId, itemType, itemName, description, startingPrice, durationMinutes, extraValue);
+        return new CreateAuctionRequest(
+                normalizedSellerId,
+                itemType,
+                itemName,
+                description,
+                startingPrice,
+                bidIncrement,
+                durationMinutes,
+                extraValue);
     }
 }

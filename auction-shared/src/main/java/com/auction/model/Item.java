@@ -23,7 +23,8 @@ public abstract class Item {
         return name;
     }
 
-    public String getDescription() {return description;
+    public String getDescription() {
+        return description;
     }
 
     public double getStartingPrice() {
@@ -41,11 +42,12 @@ public abstract class Item {
             throw new RuntimeException("New price must be higher than current price");
         }
     }
+
     public void restoreCurrentPrice(double currentPrice) {
         this.currentPrice = Math.max(startingPrice, currentPrice);
     }
 
-    public abstract void printInfo();
-
     public abstract ItemType getItemType();
+
+    public abstract void printInfo();
 }
