@@ -8,6 +8,7 @@ auction-server/tmp-users.json
 
 # Maven target
 /**/target/
+/**/.m2-repository/
 
 # IntelliJ
 *.iml

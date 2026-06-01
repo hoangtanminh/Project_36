@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -93,7 +94,7 @@
                           style="-fx-background-color: #171a26; -fx-border-color: #2b3047;
                                  -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12;
                                  -fx-padding: 14;">
-                        <Label text="RESERVE PRICE" style="-fx-font-size: 10px; -fx-text-fill: #6a7693;"/>
+                        <Label text="STARTING PRICE" style="-fx-font-size: 10px; -fx-text-fill: #6a7693;"/>
                         <Label fx:id="reserveLabel" text="-"
                                style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #d6dcf0;"/>
                     </VBox>
@@ -125,8 +126,51 @@
                                    -fx-padding: 10 18; -fx-cursor: hand;"/>
                 </HBox>
 
+                <HBox spacing="10" alignment="CENTER_LEFT"
+                      style="-fx-background-color: #171a26; -fx-border-color: #2b3047;
+                             -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12;
+                             -fx-padding: 16;">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="AUTO-BID MAX" style="-fx-font-size: 10px; -fx-text-fill: #5dcaa5;"/>
+                        <TextField fx:id="autoBidMaxField" promptText="Maximum amount"
+                                   style="-fx-background-color: #0d1019; -fx-text-fill: white;
+                                          -fx-prompt-text-fill: #4c5673; -fx-border-color: #2b3047;
+                                          -fx-border-width: 1; -fx-border-radius: 10; -fx-background-radius: 10;
+                                          -fx-padding: 10 12;"/>
+                    </VBox>
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="AUTO-BID STEP" style="-fx-font-size: 10px; -fx-text-fill: #5dcaa5;"/>
+                        <TextField fx:id="autoBidIncrementField" promptText="Increment"
+                                   style="-fx-background-color: #0d1019; -fx-text-fill: white;
+                                          -fx-prompt-text-fill: #4c5673; -fx-border-color: #2b3047;
+                                          -fx-border-width: 1; -fx-border-radius: 10; -fx-background-radius: 10;
+                                          -fx-padding: 10 12;"/>
+                    </VBox>
+                    <Button fx:id="autoBidButton" text="Arm Auto-Bid" onAction="#setAutoBid"
+                            style="-fx-background-color: #5dcaa5; -fx-text-fill: #0f1118;
+                                   -fx-font-weight: bold; -fx-border-radius: 10; -fx-background-radius: 10;
+                                   -fx-padding: 10 18; -fx-cursor: hand;"/>
+                </HBox>
+
                 <Label fx:id="actionStatusLabel" text="" wrapText="true"
                        style="-fx-font-size: 12px; -fx-text-fill: #7c6af7;"/>
+
+                <VBox spacing="8"
+                      style="-fx-background-color: #171a26; -fx-border-color: #2b3047;
+                             -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12;
+                             -fx-padding: 16;">
+                    <Label text="BID PRICE TREND" style="-fx-font-size: 10px; -fx-text-fill: #6a7693;"/>
+                    <LineChart fx:id="bidChart" animated="false" legendVisible="false" createSymbols="true"
+                               prefHeight="220" style="-fx-background-color: transparent;">
+                        <xAxis>
+                            <NumberAxis fx:id="bidChartXAxis" label="Bid #" autoRanging="false"
+                                        lowerBound="0" upperBound="2" tickUnit="1"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis fx:id="bidChartYAxis" label="Amount"/>
+                        </yAxis>
+                    </LineChart>
+                </VBox>
 
                 <VBox spacing="8"
                       style="-fx-background-color: #171a26; -fx-border-color: #2b3047;

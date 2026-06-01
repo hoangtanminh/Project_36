@@ -113,14 +113,14 @@
                                 <Spinner fx:id="durationSpinner"/>
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Brand / Era" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
+                                <Label fx:id="secondaryFieldLabel" text="Warranty (months)" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
                                 <TextField fx:id="createSecondaryField" promptText="e.g. Samsung"
                                            style="-fx-background-color: #0d1019; -fx-text-fill: white;
                                                   -fx-border-color: #2b3047; -fx-border-radius: 8;
                                                   -fx-background-radius: 8; -fx-padding: 8 10;"/>
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Condition / Grade" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
+                                <Label fx:id="tertiaryFieldLabel" text="Brand / Condition" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
                                 <TextField fx:id="createTertiaryField" promptText="e.g. Like new"
                                            style="-fx-background-color: #0d1019; -fx-text-fill: white;
                                                   -fx-border-color: #2b3047; -fx-border-radius: 8;
