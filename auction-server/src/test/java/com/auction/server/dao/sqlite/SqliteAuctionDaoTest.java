@@ -42,7 +42,8 @@ class SqliteAuctionDaoTest {
         auction.startAuction();
         auction.placeBid(new Bid(bidder, 1300.0, now));
         auctionDao.save(record);
-
+        // Tạo một instance mới của SqliteAuctionDao để kiểm tra việc tải lại dữ liệu từ cơ sở dữ liệu SQLite, 
+        // đảm bảo rằng dữ liệu đã được lưu trữ chính xác và có thể truy xuất được qua các instance khác nhau của DAO.
         SqliteAuctionDao reloadedAuctionDao = new SqliteAuctionDao(database);
         try {
             ManagedAuction storedAuction = reloadedAuctionDao.findById("A1001").orElseThrow();
