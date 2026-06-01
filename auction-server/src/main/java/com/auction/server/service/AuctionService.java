@@ -14,6 +14,9 @@ import com.auction.model.ItemFactory;
 import com.auction.model.ItemType;
 import com.auction.model.Seller;
 import com.auction.model.User;
+import com.auction.model.exception.AuctionClosedException;
+import com.auction.model.exception.InvalidAuctionException;
+import com.auction.model.exception.InvalidBidException;
 import com.auction.model.exception.SellerOwnAuctionException;
 import com.auction.model.exception.UnauthorizedActionException;
 import com.auction.server.dao.AuctionDao;
@@ -128,7 +131,7 @@ public final class AuctionService {
         ManagedAuction record = requireAuctionRecord(request.auctionId());
         requireOwner(record, seller);
         if (record.getAuction().getStatus() != AuctionStatus.OPEN) {
-            throw new IllegalStateException("Only OPEN auctions can be updated.");
+            throw new AuctionClosedException(record.getAuctionId(), record.getAuction().getStatus(), "Only OPEN auctions can be updated.");
         }
         validateCreateOrUpdate(request.startingPrice(), request.bidIncrement(), request.durationMinutes(), request.itemName());
         record.getAuction().shutdownScheduler();
@@ -163,7 +166,7 @@ public final class AuctionService {
         User actor = requireUser(request.actorId());
         requireOwnerOrAdmin(record, actor);
         if (record.getAuction().getStatus() != AuctionStatus.OPEN) {
-            throw new IllegalStateException("Only OPEN auctions can be deleted.");
+            throw new AuctionClosedException(record.getAuctionId(), record.getAuction().getStatus(), "Only OPEN auctions can be deleted.");
         }
         AuctionView deletedView = mapper.toView(record);
         record.getAuction().shutdownScheduler();
@@ -185,17 +188,17 @@ public final class AuctionService {
         } else if (user instanceof Seller s) {
             bidder = new Bidder(s.getId(), s.getName(), s.getPassword(), s.getBalance());
         } else {
-            throw new IllegalArgumentException("Only bidder or seller accounts can place bids.");
+            throw new UnauthorizedActionException("Only bidder or seller accounts can place bids.");
         }
         if (request.amount() <= 0) {
-            throw new IllegalArgumentException("Bid amount must be greater than zero.");
+            throw new InvalidBidException(record.getAuction().getItem().getCurrentPrice(), request.amount());
         }
 
         ReentrantLock lock = auctionManager.lockForAuction(record.getAuctionId());
         lock.lock();
         try {
             if (record.getAuction().getStatus() != AuctionStatus.RUNNING) {
-                throw new IllegalStateException("Auction is not running for bidding");
+                throw new AuctionClosedException(record.getAuctionId(), record.getAuction().getStatus(), "Auction is not running for bidding");
             }
             record.getAuction().placeBid(new Bid(bidder, request.amount()));
             auctionManager.runAutoBids(record.getAuction());
@@ -219,13 +222,13 @@ public final class AuctionService {
         } else if (user instanceof Seller s) {
             bidder = new Bidder(s.getId(), s.getName(), s.getPassword(), s.getBalance());
         } else {
-            throw new IllegalArgumentException("Only bidder or seller accounts can configure auto-bidding.");
+            throw new UnauthorizedActionException("Only bidder or seller accounts can configure auto-bidding.");
         }
         if (request.maxBid() <= 0) {
-            throw new IllegalArgumentException("Maximum auto-bid must be greater than zero.");
+            throw new InvalidBidException(record.getAuction().getMinimumNextBid(), request.maxBid());
         }
         if (request.increment() <= 0) {
-            throw new IllegalArgumentException("Auto-bid increment must be greater than zero.");
+            throw new InvalidBidException(record.getAuction().getMinimumNextBid(), request.increment());
         }
 
         ReentrantLock lock = auctionManager.lockForAuction(record.getAuctionId());
@@ -233,11 +236,10 @@ public final class AuctionService {
         try {
             Auction auction = record.getAuction();
             if (auction.getStatus() != AuctionStatus.RUNNING) {
-                throw new IllegalStateException("Auction is not running for bidding");
+                throw new AuctionClosedException(record.getAuctionId(), auction.getStatus(), "Auction is not running for bidding");
             }
             if (request.maxBid() < auction.getMinimumNextBid()) {
-                throw new IllegalArgumentException("Maximum auto-bid must be at least "
-                        + auction.getMinimumNextBid() + ".");
+                throw new InvalidBidException(auction.getMinimumNextBid(), request.maxBid());
             }
 
             auctionManager.setAutoBid(record.getAuctionId(), bidder, request.maxBid(), request.increment());
@@ -264,7 +266,7 @@ public final class AuctionService {
         User actor = requireUser(request.actorId());
         requireOwnerOrAdmin(record, actor);
         if (record.getAuction().getStatus() != AuctionStatus.OPEN) {
-            throw new IllegalStateException("Only OPEN auctions can be started.");
+            throw new AuctionClosedException(record.getAuctionId(), record.getAuction().getStatus(), "Only OPEN auctions can be started.");
         }
         record.getAuction().startAuction();
         AuctionView view = mapper.toView(record);
@@ -277,7 +279,7 @@ public final class AuctionService {
         User actor = requireUser(request.actorId());
         requireOwnerOrAdmin(record, actor);
         if (record.getAuction().getStatus() != AuctionStatus.RUNNING) {
-            throw new IllegalStateException("Only RUNNING auctions can be finished.");
+            throw new AuctionClosedException(record.getAuctionId(), record.getAuction().getStatus(), "Only RUNNING auctions can be finished.");
         }
         record.getAuction().closeAuction();
         AuctionView view = mapper.toView(record);
@@ -290,7 +292,7 @@ public final class AuctionService {
         User actor = requireUser(request.actorId());
         requireAdmin(actor);
         if (record.getAuction().getStatus() != AuctionStatus.FINISHED) {
-            throw new IllegalStateException("Only FINISHED auctions can be marked paid.");
+            throw new AuctionClosedException(record.getAuctionId(), record.getAuction().getStatus(), "Only FINISHED auctions can be marked paid.");
         }
         record.getAuction().markPaid();
         AuctionView view = mapper.toView(record);
@@ -312,22 +314,22 @@ public final class AuctionService {
     public AuctionView payAuction(AuctionActionRequest request) {
         User actor = requireUser(request.actorId());
         if (!(actor instanceof Bidder bidder)) {
-            throw new IllegalArgumentException("Only bidder accounts can pay for won auctions.");
+            throw new UnauthorizedActionException("Only bidder accounts can pay for won auctions.");
         }
 
         ManagedAuction record = requireAuctionRecord(request.auctionId());
         Auction auction = record.getAuction();
         if (auction.getStatus() == AuctionStatus.PAID) {
-            throw new IllegalStateException("This auction has already been paid.");
+            throw new AuctionClosedException(record.getAuctionId(), auction.getStatus(), "This auction has already been paid.");
         }
         if (auction.getStatus() != AuctionStatus.FINISHED) {
-            throw new IllegalStateException("Only FINISHED auctions can be paid.");
+            throw new AuctionClosedException(record.getAuctionId(), auction.getStatus(), "Only FINISHED auctions can be paid.");
         }
         if (auction.getHighestBid() == null) {
-            throw new IllegalStateException("This auction has no winning bidder.");
+            throw new AuctionClosedException(record.getAuctionId(), auction.getStatus(), "This auction has no winning bidder.");
         }
         if (!bidder.getId().equals(auction.getHighestBid().getBidder().getId())) {
-            throw new IllegalArgumentException("Only the winning bidder can pay for this auction.");
+            throw new UnauthorizedActionException("Only the winning bidder can pay for this auction.");
         }
 
         bidder.withdrawFunds(auction.getItem().getCurrentPrice());
@@ -343,7 +345,7 @@ public final class AuctionService {
         User actor = requireUser(request.actorId());
         requireAdmin(actor);
         if (record.getAuction().getStatus() == AuctionStatus.PAID) {
-            throw new IllegalStateException("PAID auctions cannot be canceled.");
+            throw new AuctionClosedException(record.getAuctionId(), record.getAuction().getStatus(), "PAID auctions cannot be canceled.");
         }
         record.getAuction().cancelAuction();
         AuctionView view = mapper.toView(record);
@@ -386,7 +388,7 @@ public final class AuctionService {
         try {
             return ItemType.valueOf(itemTypeValue.trim().toUpperCase());
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Unsupported item type: " + itemTypeValue);
+            throw new InvalidAuctionException("Unsupported item type: " + itemTypeValue, "itemType");
         }
     }
 
@@ -397,7 +399,7 @@ public final class AuctionService {
         try {
             return Integer.parseInt(extraValue.trim());
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Warranty must be a whole number of months.");
+            throw new InvalidAuctionException("Warranty must be a whole number of months.", "extraValue");
         }
     }
 
@@ -407,16 +409,16 @@ public final class AuctionService {
 
     private void validateCreateOrUpdate(double startingPrice, double bidIncrement, int durationMinutes, String itemName) {
         if (itemName == null || itemName.isBlank()) {
-            throw new IllegalArgumentException("Item name is required.");
+            throw new InvalidAuctionException("Item name is required.", "itemName");
         }
         if (startingPrice <= 0) {
-            throw new IllegalArgumentException("Starting price must be greater than zero.");
+            throw new InvalidAuctionException("Starting price must be greater than zero.", "startingPrice");
         }
         if (bidIncrement <= 0) {
-            throw new IllegalArgumentException("Bid increment must be greater than zero.");
+            throw new InvalidAuctionException("Bid increment must be greater than zero.", "bidIncrement");
         }
         if (durationMinutes < 1) {
-            throw new IllegalArgumentException("Duration must be at least 1 minute.");
+            throw new InvalidAuctionException("Duration must be at least 1 minute.", "durationMinutes");
         }
     }
 
@@ -433,7 +435,7 @@ public final class AuctionService {
     private Seller requireSeller(String sellerId) {
         User user = requireUser(sellerId);
         if (!(user instanceof Seller seller)) {
-            throw new IllegalArgumentException("Only seller accounts can manage auctions.");
+            throw new UnauthorizedActionException("Only seller accounts can manage auctions.");
         }
         return seller;
     }
