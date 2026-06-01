@@ -51,6 +51,8 @@ class ProtocolSerializationRoundTripTest {
                 AuctionStatus.RUNNING,
                 now.minusMinutes(3),
                 now.plusMinutes(12),
+                50.0,
+                1250.0,
                 new ItemView("I2001", "Laptop", "Gaming laptop", 1000, 1200, "Electronics", "Warranty: 24 months"),
                 new BidView("bidder-1", "Bidder One", 1200, now.minusMinutes(1)),
                 List.of(new BidTransactionView("bidder-1", "Bidder One", 1200, now.minusMinutes(1))),

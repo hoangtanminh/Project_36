@@ -1,13 +1,14 @@
 package com.auctionhouse.client.view;
 
+import com.auctionhouse.client.controller.AccountController;
 import com.auctionhouse.client.controller.AuctionDetailController;
 import com.auctionhouse.client.controller.DashboardController;
 import com.auctionhouse.client.controller.LoginController;
 import com.auctionhouse.client.controller.RegisterController;
 import com.auctionhouse.client.controller.SellerController;
 import com.auctionhouse.client.service.AuctionClientService;
-import com.auction.model.Auction;
-import com.auction.model.User;
+import com.auction.shared.dto.AuctionView;
+import com.auction.shared.dto.UserView;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -46,7 +47,7 @@ public final class AppCoordinator {
         showAuthScene(root);
     }
 
-    public void showDashboard(User user) throws IOException {
+    public void showDashboard(UserView user) throws IOException {
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/com/auctionhouse/client/DashboardView.fxml")
         );
@@ -58,7 +59,7 @@ public final class AppCoordinator {
         stage.show(); //hiển thị màn hình theo scene vừa set
     }
 
-    public void showAuctionDetail(User user, Auction auction) throws IOException {
+    public void showAuctionDetail(UserView user, AuctionView auction) throws IOException {
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/com/auctionhouse/client/AuctionDetailView.fxml")
         );
@@ -70,12 +71,24 @@ public final class AppCoordinator {
         stage.show();
     }
 
-    public void showSeller(User user) throws IOException {
+    public void showSeller(UserView user) throws IOException {
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/com/auctionhouse/client/SellerView.fxml")
         );
         Parent root = loader.load();
         SellerController controller = loader.getController();
+        controller.init(this, clientService, user);
+
+        stage.setScene(new Scene(root, 1100, 750));
+        stage.show();
+    }
+
+    public void showAccount(UserView user) throws IOException {
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/com/auctionhouse/client/AccountView.fxml")
+        );
+        Parent root = loader.load();
+        AccountController controller = loader.getController();
         controller.init(this, clientService, user);
 
         stage.setScene(new Scene(root, 1100, 750));

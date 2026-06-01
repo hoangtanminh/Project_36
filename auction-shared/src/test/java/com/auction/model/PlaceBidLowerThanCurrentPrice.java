@@ -24,7 +24,7 @@ class PlaceBidLowerThanCurrentPriceTest extends AuctionTestBase {
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> auction.placeBid(lowBid));
 
-        assertEquals("Bid must be higher than current price: 1000.0", exception.getMessage());
+        assertEquals("Bid 900.00 is not higher than current price 1000.00.", exception.getMessage());
         assertEquals(1_000.0, item.getCurrentPrice());
         assertNull(auction.getHighestBid());
 

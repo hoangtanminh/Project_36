@@ -7,7 +7,11 @@ public class AuctionClosedException extends IllegalStateException {
     private final AuctionStatus status;
 
     public AuctionClosedException(String auctionId, AuctionStatus status) {
-        super(String.format("Auction '%s' is not open for bidding (status=%s).", auctionId, status));
+        this(auctionId, status, String.format("Auction '%s' is not open for bidding (status=%s).", auctionId, status));
+    }
+
+    public AuctionClosedException(String auctionId, AuctionStatus status, String message) {
+        super(message);
         this.auctionId = auctionId;
         this.status = status;
     }

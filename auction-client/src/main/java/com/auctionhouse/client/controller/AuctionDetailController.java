@@ -75,7 +75,7 @@ public final class AuctionDetailController {
         this.coordinator = coordinator;
         this.clientService = clientService;
         this.currentUser = currentUser;
-
+        // thiết lập giao diện, đăng ký sự kiện, tải dữ liệu chi tiết phiên đấu giá và hiển thị
         configureView();
         clientService.setEventListener(this::handleEventResponse);
         sessionModel.selectAuction(auction);
@@ -186,7 +186,7 @@ public final class AuctionDetailController {
             actionStatusLabel.setText(exception.getMessage());
         }
     }
-
+    // bảng vẽ giá thầu theo thời gian, hiển thị lịch sử giá thầu, cập nhật trạng thái và tương tác đặt giá thầu tự động
     private void configureView() {
         boolean bidder = currentUser.getRole() == UserRole.BIDDER;
         bidAmountField.setDisable(!bidder);
@@ -230,7 +230,8 @@ public final class AuctionDetailController {
         bidHistoryListView.setItems(sessionModel.getBidHistory());
         bidHistoryListView.setPlaceholder(new Label("No bids have been placed yet."));
     }
-
+    // đăng ký sự kiện, tải dữ liệu chi tiết phiên đấu giá và hiển thị chi tiết,
+    // bảng vẽ giá thầu theo thời gian, hiển thị lịch sử giá thầu, cập nhật trạng thái và tương tác đặt giá thầu tự động
     private void subscribeAndRender(AuctionView auction) {
         CompletableFuture.supplyAsync(
                         () -> clientService.subscribe(auction.getAuctionId(), currentUser.getId()))
@@ -319,7 +320,8 @@ public final class AuctionDetailController {
         long seconds = totalSeconds % 60;
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
-
+    // xử lý phản hồi sự kiện từ máy chủ để cập nhật giao diện người dùng khi có thay đổi về phiên đấu giá, 
+    // như giá thầu mới hoặc trạng thái thay đổi
     private void handleEventResponse(ServerResponse<?> response) {
         Platform.runLater(() -> {
             if (!(response.getPayload() instanceof AuctionView auction)) {
