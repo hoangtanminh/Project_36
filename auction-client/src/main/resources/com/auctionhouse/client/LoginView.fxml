@@ -58,17 +58,50 @@
 
             <VBox spacing="6">
                 <Label text="Password" style="-fx-font-size: 12px; -fx-text-fill: #888;"/>
-                <PasswordField fx:id="passwordField"
-                               promptText="Enter your password"
-                               style="-fx-background-color: #0f0f1a;
-                                      -fx-text-fill: white;
-                                      -fx-prompt-text-fill: #444;
-                                      -fx-border-color: #2a2a4a;
-                                      -fx-border-width: 1;
-                                      -fx-border-radius: 8;
-                                      -fx-background-radius: 8;
-                                      -fx-padding: 10 14;
-                                      -fx-font-size: 13px;"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <StackPane HBox.hgrow="ALWAYS">
+                        <PasswordField fx:id="passwordField"
+                                       promptText="Enter your password"
+                                       maxWidth="Infinity"
+                                       style="-fx-background-color: #0f0f1a;
+                                              -fx-text-fill: white;
+                                              -fx-prompt-text-fill: #444;
+                                              -fx-border-color: #2a2a4a;
+                                              -fx-border-width: 1;
+                                              -fx-border-radius: 8;
+                                              -fx-background-radius: 8;
+                                              -fx-padding: 10 14;
+                                              -fx-font-size: 13px;"/>
+                        <TextField fx:id="passwordVisibleField"
+                                   visible="false"
+                                   managed="false"
+                                   promptText="Enter your password"
+                                   maxWidth="Infinity"
+                                   style="-fx-background-color: #0f0f1a;
+                                          -fx-text-fill: white;
+                                          -fx-prompt-text-fill: #444;
+                                          -fx-border-color: #2a2a4a;
+                                          -fx-border-width: 1;
+                                          -fx-border-radius: 8;
+                                          -fx-background-radius: 8;
+                                          -fx-padding: 10 14;
+                                          -fx-font-size: 13px;"/>
+                    </StackPane>
+                    <Button fx:id="togglePasswordButton"
+                            text="👁"
+                            onAction="#togglePasswordVisibility"
+                            focusTraversable="false"
+                            style="-fx-background-color: #0f0f1a;
+                                   -fx-text-fill: #d6dcf0;
+                                   -fx-font-size: 15px;
+                                   -fx-font-weight: bold;
+                                   -fx-border-color: #2a2a4a;
+                                   -fx-border-width: 1;
+                                   -fx-border-radius: 8;
+                                   -fx-background-radius: 8;
+                                   -fx-padding: 8 11;
+                                   -fx-cursor: hand;"/>
+                </HBox>
             </VBox>
 
             <Label fx:id="statusLabel" wrapText="true"
