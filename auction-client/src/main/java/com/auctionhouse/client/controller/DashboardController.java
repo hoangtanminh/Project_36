@@ -6,14 +6,13 @@ import com.auction.shared.dto.AuctionView;
 import com.auction.shared.dto.UserView;
 import com.auction.shared.enums.ResponseStatus;
 import com.auction.shared.enums.UserRole;
+import com.auction.shared.protocol.AuctionActionRequest;
 import com.auction.shared.protocol.ServerResponse;
 import com.auctionhouse.client.model.SessionModel;
 import com.auctionhouse.client.service.AuctionClientService;
 import com.auctionhouse.client.view.AppCoordinator;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -243,16 +242,7 @@ public final class DashboardController {
         countdownLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2a72f;");
         countdownLabels.put(auction.getAuctionId(), countdownLabel);
 
-        Button actionButton = new Button("Join auction");
-        actionButton.setMaxWidth(Double.MAX_VALUE);
-        actionButton.setStyle("-fx-background-color: transparent; -fx-text-fill: #f7f2eb; "
-                + "-fx-font-size: 14px; -fx-font-weight: bold; -fx-border-color: #6e6760; "
-                + "-fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12; "
-                + "-fx-padding: 10 0; -fx-cursor: hand;");
-        actionButton.setOnAction(event -> {
-            event.consume();
-            openAuction(auction);
-        });
+        Button actionButton = buildActionButton(auction);
 
         content.getChildren().addAll(titleLabel, priceCaptionLabel, priceLabel, metaRow, countdownLabel, actionButton);
         card.getChildren().addAll(banner, content);
@@ -396,6 +386,9 @@ public final class DashboardController {
     private String buildCountdownLabel(AuctionView auction) {
         AuctionStatus status = auction.getStatus();
         if (status == AuctionStatus.OPEN) {
+            if (canStartAuction(auction)) {
+                return "Ready to start";
+            }
             return "Waiting for seller to start";
         }
         if (status == AuctionStatus.RUNNING) {
@@ -466,6 +459,56 @@ public final class DashboardController {
         return "📦";
     }
 
+    private Button buildActionButton(AuctionView auction) {
+        boolean ownedByCurrentSeller = canStartAuction(auction);
+        Button actionButton = new Button(ownedByCurrentSeller ? "Start auction" : "Join auction");
+        actionButton.setMaxWidth(Double.MAX_VALUE);
+        actionButton.setStyle(ownedByCurrentSeller
+                ? "-fx-background-color: #22362b; -fx-text-fill: #5dcaa5; "
+                + "-fx-font-size: 14px; -fx-font-weight: bold; -fx-border-color: #5dcaa5; "
+                + "-fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12; "
+                + "-fx-padding: 10 0; -fx-cursor: hand;"
+                : "-fx-background-color: transparent; -fx-text-fill: #f7f2eb; "
+                + "-fx-font-size: 14px; -fx-font-weight: bold; -fx-border-color: #6e6760; "
+                + "-fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12; "
+                + "-fx-padding: 10 0; -fx-cursor: hand;");
+        actionButton.setOnAction(event -> {
+            event.consume();
+            if (ownedByCurrentSeller) {
+                startOwnedAuction(auction);
+                return;
+            }
+            openAuction(auction);
+        });
+        return actionButton;
+    }
+
+    private void startOwnedAuction(AuctionView auction) {
+        if (!canStartAuction(auction)) {
+            actionStatusLabel.setText("Only the seller owner can start this auction.");
+            return;
+        }
+        actionStatusLabel.setText("Starting auction...");
+        CompletableFuture.supplyAsync(() -> clientService.startAuction(
+                        new AuctionActionRequest(auction.getAuctionId(), currentUser.getId())))
+                .whenComplete((updatedAuction, err) -> Platform.runLater(() -> {
+                    if (err != null) {
+                        actionStatusLabel.setText(extractMessage(err));
+                        return;
+                    }
+                    actionStatusLabel.setText("Auction is now RUNNING.");
+                    loadDashboard();
+                }));
+    }
+
+    private boolean canStartAuction(AuctionView auction) {
+        return currentUser != null
+                && currentUser.getRole() == UserRole.SELLER
+                && auction != null
+                && auction.getStatus() == AuctionStatus.OPEN
+                && currentUser.getId().equals(auction.getSellerId());
+    }
+
     private String formatPrice(double amount) {
         return PRICE_FORMAT.format(amount);
     }
@@ -486,4 +529,3 @@ public final class DashboardController {
         FINISHED
     }
 }
-
