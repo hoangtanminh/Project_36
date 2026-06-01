@@ -38,12 +38,4 @@ public record ItemView(
     public String getDetailLabel() {
         return detailLabel;
     }
-
-    // Compatibility aliases used by the client UI
-    public String getTitle() { return name; }
-    public String getCategory() { return itemType; }
-    public String getHighlightLine() { return detailLabel; }
-    public String getImageHint() { return ""; }
-    public java.math.BigDecimal getOpeningPrice() { return java.math.BigDecimal.valueOf(startingPrice); }
-    public java.math.BigDecimal getMinimumNextBid() { return java.math.BigDecimal.valueOf(currentPrice + 1.0); }
 }

@@ -13,6 +13,8 @@ public record AuctionView(
         AuctionStatus status,
         LocalDateTime startTime,
         LocalDateTime endTime,
+        double bidIncrement,
+        double minimumNextBid,
         ItemView item,
         BidView highestBid,
         List<BidTransactionView> bidHistory,
@@ -40,6 +42,14 @@ public record AuctionView(
 
     public LocalDateTime getEndTime() {
         return endTime;
+    }
+
+    public double getBidIncrement() {
+        return bidIncrement;
+    }
+
+    public double getMinimumNextBid() {
+        return minimumNextBid;
     }
 
     public ItemView getItem() {
