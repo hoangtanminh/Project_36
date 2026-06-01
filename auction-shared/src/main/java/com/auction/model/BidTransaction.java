@@ -9,9 +9,13 @@ public class BidTransaction {
     private final LocalDateTime transactionTime;
 
     public BidTransaction(String auctionId, Bid bid) {
+        this(auctionId, bid, LocalDateTime.now());
+    }
+
+    public BidTransaction(String auctionId, Bid bid, LocalDateTime transactionTime) {
         this.auctionId = auctionId;
         this.bid = bid;
-        this.transactionTime = LocalDateTime.now();
+        this.transactionTime = transactionTime == null ? LocalDateTime.now() : transactionTime;
     }
 
     public String getAuctionId() {

@@ -14,14 +14,14 @@ public class Electronics extends Item {
     }
 
     @Override
+    public ItemType getItemType() {
+        return ItemType.ELECTRONICS;
+    }
+
+    @Override
     public void printInfo() {
         System.out.println("Electronics: " + getName()
                 + " | Price: " + getCurrentPrice()
                 + " | Warranty: " + warrantyMonths + " months");
-    }
-
-    @Override
-    public ItemType getItemType() {
-        return ItemType.ELECTRONICS;
     }
 }
