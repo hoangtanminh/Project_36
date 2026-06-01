@@ -8,18 +8,19 @@
     <artifactId>BaiTap</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    
+
     <modules>
         <module>auction-shared</module>
         <module>auction-server</module>
         <module>auction-client</module>
     </modules>
-    
+
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -35,6 +36,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -71,8 +73,6 @@
                 <version>3.6.0</version>
                 <configuration>
                     <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</configLocation>
-                    // consoleOutput: hiển thị kết quả kiểm tra trên console
-                    // failsOnError: nếu có lỗi sẽ làm cho build thất bại
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <outputFile>${maven.multiModuleProjectDirectory}/target/checkstyle/checkstyle-report.xml</outputFile>
