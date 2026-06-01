@@ -4,7 +4,6 @@ package com.auction.server.service;
 import com.auction.model.Bidder;
 import com.auction.model.Seller;
 import com.auction.model.User;
-import com.auction.model.exception.AuthenticationException;
 import com.auction.server.dao.UserDao;
 import com.auction.shared.enums.UserRole;
 import com.auction.shared.protocol.RegisterRequest;
@@ -19,16 +18,16 @@ public final class AuthenticationService {
     // Xac thuc tai khoan dang nhap bang username/password da luu trong UserDao.
     public User login(String username, String password) {
         if (username == null || username.isBlank()) {
-            throw new AuthenticationException("Username is required.");
+            throw new IllegalArgumentException("Username is required.");
         }
         if (password == null || password.isBlank()) {
-            throw new AuthenticationException("Password is required.");
+            throw new IllegalArgumentException("Password is required.");
         }
 
         User user = userDao.findById(username.trim())
-                .orElseThrow(() -> new AuthenticationException("Unknown username: " + username));
+                .orElseThrow(() -> new IllegalArgumentException("Unknown username: " + username));
         if (!user.getPassword().equals(password.trim())) {
-            throw new AuthenticationException("Invalid password.");
+            throw new IllegalArgumentException("Invalid password.");
         }
         return user;
     }
@@ -36,7 +35,7 @@ public final class AuthenticationService {
     // Tao tai khoan moi tu request register va dua user vao bo nho server.
     public User register(RegisterRequest request) {
         if (request == null) {
-            throw new AuthenticationException("Register request is required.");
+            throw new IllegalArgumentException("Register request is required.");
         }
 
         String username = requireText(request.username(), "Username is required.");
@@ -45,16 +44,16 @@ public final class AuthenticationService {
         UserRole role = request.role() == null ? UserRole.BIDDER : request.role();
 
         if (password.length() < 4) {
-            throw new AuthenticationException("Password must be at least 4 characters.");
+            throw new IllegalArgumentException("Password must be at least 4 characters.");
         }
         if (role == UserRole.ADMIN) {
-            throw new AuthenticationException("Admin accounts cannot self-register.");
+            throw new IllegalArgumentException("Admin accounts cannot self-register.");
         }
         if (userDao.findById(username).isPresent()) {
-            throw new AuthenticationException("Username already exists: " + username);
+            throw new IllegalArgumentException("Username already exists: " + username);
         }
         if (role == UserRole.SELLER && isBlank(request.storefrontName())) {
-            throw new AuthenticationException("Seller accounts need a storefront name.");
+            throw new IllegalArgumentException("Seller accounts need a storefront name.");
         }
 
         String visibleName = role == UserRole.SELLER
@@ -63,7 +62,7 @@ public final class AuthenticationService {
         User user = switch (role) {
             case SELLER -> new Seller(username, visibleName, password);
             case BIDDER -> new Bidder(username, displayName, password);
-            case ADMIN -> throw new AuthenticationException("Admin accounts cannot self-register.");
+            case ADMIN -> throw new IllegalArgumentException("Admin accounts cannot self-register.");
         };
         userDao.save(user);
         return user;
@@ -71,7 +70,7 @@ public final class AuthenticationService {
 
     private String requireText(String value, String message) {
         if (value == null || value.isBlank()) {
-            throw new AuthenticationException(message);
+            throw new IllegalArgumentException(message);
         }
         return value.trim();
     }
