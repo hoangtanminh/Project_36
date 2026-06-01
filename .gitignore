@@ -12,4 +12,7 @@ auction-server/tmp-users.json
 
 # IntelliJ
 *.iml
-.idea/
+.idea/*
+!.idea/.gitignore
+!.idea/runConfigurations/
+!.idea/runConfigurations/*.xml
