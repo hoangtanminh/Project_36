@@ -1,6 +1,9 @@
 package com.auctionhouse.client.service;
 
 
+import com.auction.model.exception.ClientConnectionException;
+import com.auction.model.exception.ClientProtocolException;
+import com.auction.model.exception.ServerResponseException;
 import com.auction.shared.dto.AuctionView;
 import com.auction.shared.dto.DashboardView;
 import com.auction.shared.dto.UserView;
@@ -45,6 +48,8 @@ public final class AuctionClientService implements Closeable {
     private ObjectInputStream inputStream;
     private CompletableFuture<Void> listenerLoop;
     private volatile String authenticatedUserId = "client";
+    private volatile boolean closingConnection;
+    private volatile int connectionVersion;
 
     public AuctionClientService(String host, int port) {
         this.host = host;
@@ -139,6 +144,7 @@ public final class AuctionClientService implements Closeable {
     }
 
     public synchronized void logout() {
+        closingConnection = true;
         try {
             if (outputStream != null && socket != null && socket.isConnected() && !socket.isClosed()) {
                 outputStream.writeObject(new ClientRequest<>(CommandType.LOGOUT, new LogoutRequest(authenticatedUserId)));
@@ -169,15 +175,15 @@ public final class AuctionClientService implements Closeable {
 
             //check lỗi rồi throw ra một java exception
             if (response.getStatus() == ResponseStatus.ERROR) {
-                throw new IllegalStateException(response.getMessage());
+                throw new ServerResponseException(response.getMessage());
             }
             return response; // không sai thì trả lại response
         } catch (IOException exception) {
             //bắt lỗi mạng như mất kết nối , socket lỗi hay sever tắt
-            throw new IllegalStateException("Network error: " + exception.getMessage(), exception);
+            throw new ClientConnectionException("Network error: " + exception.getMessage(), exception);
         } catch (InterruptedException exception) {//bắt lỗi bị interrupt
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for server response.", exception);
+            throw new ClientConnectionException("Interrupted while waiting for server response.", exception);
         }
     }
 
@@ -188,21 +194,23 @@ public final class AuctionClientService implements Closeable {
             return;
         }
         try {
+            int listenerConnectionVersion = ++connectionVersion;
             responses.clear();// xóa để tránh request mới nhận nhầm response cũ
+            closingConnection = false;
             socket = new Socket(host, port);//tạo socket
             // serialization ( tuần tự hóa ) biến các đối tượng thành các chuỗi byte đến buffer trên socket máy nhận
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             outputStream.flush();//ép gưỉ đi luôn
             inputStream = new ObjectInputStream(socket.getInputStream());//đọc response từ sever
             //tạo background thread , đọc response liên tục
-            listenerLoop = CompletableFuture.runAsync(this::listenForResponses);
+            listenerLoop = CompletableFuture.runAsync(() -> listenForResponses(listenerConnectionVersion));
         } catch (IOException exception) { //bắt lỗi mạng
-            throw new IllegalStateException("Cannot connect to auction server at " + host + ":" + port, exception);
+            throw new ClientConnectionException("Cannot connect to auction server at " + host + ":" + port, exception);
         }
     }
 
     //UI update realtime như giá bid đổi , winner đổi...
-    private void listenForResponses() {
+    private void listenForResponses(int listenerConnectionVersion) {
         try {
             while (socket != null && !socket.isClosed()) {  //nếu socket còn chưa bị đóng và tồn tại thì lặp lại vô hạn
                 Object payload = inputStream.readObject();  //client chờ sever gửi dữ liệu
@@ -217,9 +225,13 @@ public final class AuctionClientService implements Closeable {
                 }
             }
         } catch (Exception ignored) {
-            responses.offer(ServerResponse.error("Connection to auction server was closed."));
+            if (!closingConnection && listenerConnectionVersion == connectionVersion) {
+                responses.offer(ServerResponse.error("Connection to auction server was closed."));
+            }
         } finally {
-            closeResourcesQuietly();
+            if (listenerConnectionVersion == connectionVersion) {
+                closeResourcesQuietly();
+            }
         }
     }
 
@@ -227,7 +239,7 @@ public final class AuctionClientService implements Closeable {
     private <T> T expectPayload(ServerResponse<?> response, Class<T> type) {
         Object payload = response.getPayload(); //lấy dữ liệu sever gửi về
         if (!type.isInstance(payload)) {
-            throw new IllegalStateException("Unexpected response payload: " + payload); //sai kiểu thì ném ra lỗi
+            throw new ClientProtocolException("Unexpected response payload: " + payload); //sai kiểu thì ném ra lỗi
         }
         return (T) payload;
     }
