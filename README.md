@@ -135,30 +135,16 @@ Mặc định server dùng port `5050`.
 mvn -pl auction-server -am -Prun-server process-classes
 ```
 
-Chỉ định port khác:
-
-```powershell
-mvn -pl auction-server -am -Prun-server process-classes -Dauctionhouse.port=5051
-```
-
 Server sẽ ghi port đang hoạt động vào:
 
 ```text
 auction-server/data/active-port.txt
 ```
 
-Nếu port yêu cầu đang bận, server tự tìm port kế tiếp trong phạm vi cho phép.
-
 ### Chạy client
 
 ```powershell
 mvn -pl auction-client -am -Prun-client process-classes
-```
-
-Client mặc định đọc port từ `auction-server/data/active-port.txt`. Có thể chỉ định host và port thủ công:
-
-```powershell
-mvn -pl auction-client -am -Prun-client process-classes -Dauctionhouse.host=localhost -Dauctionhouse.port=5050
 ```
 
 ## Tài khoản mẫu
@@ -239,14 +225,6 @@ Hệ thống dùng exception rõ nghĩa trong `auction-shared` để phân loạ
 - `ServerResponseException`: server trả `ResponseStatus.ERROR`.
 
 Server chuyển lỗi nghiệp vụ thành `ServerResponse.error(...)`; client nhận lỗi này và ném exception tương ứng ở tầng client service.
-
-## Ghi chú phát triển
-
-- `auction-shared` nên giữ ổn định vì đây là contract giữa client và server.
-- Khi thêm command mới, cần cập nhật `CommandType`, request DTO, `ClientSession` và `AuctionClientService`.
-- Logic nghiệp vụ nên đặt ở `auction-server/service`, không đặt trong JavaFX controller.
-- UI controller chỉ nên điều phối input, gọi service và cập nhật view.
-- Test client nên tập trung vào `AuctionClientService`; UI JavaFX có thể smoke test hoặc test thủ công nếu không có logic phức tạp.
 
 ## Công nghệ sử dụng
 
