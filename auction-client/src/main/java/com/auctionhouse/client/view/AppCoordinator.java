@@ -96,10 +96,10 @@ public final class AppCoordinator {
     }
 
     private void showAuthScene(Parent root) {
-        stage.setScene(new Scene(root, 920, 760));
+        stage.setScene(new Scene(root, 920, 980));
         stage.setTitle("AuctionHub Client");
         stage.setMinWidth(900);
-        stage.setMinHeight(720);
+        stage.setMinHeight(900);
         stage.show();
     }
 }

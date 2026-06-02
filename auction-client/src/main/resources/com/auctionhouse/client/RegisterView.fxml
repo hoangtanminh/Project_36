@@ -19,9 +19,7 @@
 
     <VBox alignment="CENTER" spacing="0" maxWidth="420">
 
-        <VBox alignment="CENTER" spacing="8" style="-fx-padding: 0 0 30 0;">
-            <Label text="+"
-                   style="-fx-font-size: 48px; -fx-text-fill: #32a883;"/>
+        <VBox alignment="CENTER" spacing="8" style="-fx-padding: 0 0 14 0;">
             <Label text="CREATE ACCOUNT"
                    style="-fx-font-size: 22px; -fx-font-weight: bold;
                           -fx-text-fill: white; -fx-letter-spacing: 3px;"/>
