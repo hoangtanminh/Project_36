@@ -1,195 +1,115 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.auctionhouse.client.controller.SellerController"
-            style="-fx-background-color: #0f1118;">
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane style="-fx-background-color: #0f1118;" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auctionhouse.client.controller.SellerController">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12"
-              style="-fx-padding: 16 22; -fx-background-color: #171a26;
-                     -fx-border-color: #2b3047; -fx-border-width: 0 0 1 0;">
-            <Button text="Back" onAction="#goBack"
-                    style="-fx-background-color: #232844; -fx-text-fill: #d6dcf0;
-                           -fx-border-color: #343b5f; -fx-border-width: 1;
-                           -fx-border-radius: 10; -fx-background-radius: 10;
-                           -fx-padding: 8 14; -fx-cursor: hand;"/>
-            <Label fx:id="pageTitle" text="Seller Panel"
-                   style="-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #5dcaa5;"/>
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 16 22; -fx-background-color: #171a26;                      -fx-border-color: #2b3047; -fx-border-width: 0 0 1 0;">
+            <Button onAction="#goBack" style="-fx-background-color: #232844; -fx-text-fill: #d6dcf0;                            -fx-border-color: #343b5f; -fx-border-width: 1;                            -fx-border-radius: 10; -fx-background-radius: 10;                            -fx-padding: 8 14; -fx-cursor: hand;" text="Back" />
+            <Label fx:id="pageTitle" style="-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #5dcaa5;" text="Seller Panel" />
         </HBox>
     </top>
 
     <center>
         <HBox style="-fx-background-color: #0f1118;">
 
-            <VBox spacing="10" prefWidth="320"
-                  style="-fx-padding: 16; -fx-background-color: #131623;
-                         -fx-border-color: #2b3047; -fx-border-width: 0 1 0 0;">
-                <Label text="MY AUCTIONS"
-                       style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #5dcaa5;"/>
-                <ListView fx:id="myAuctionListView" VBox.vgrow="ALWAYS"
-                          style="-fx-background-color: transparent;
-                                 -fx-control-inner-background: transparent;
-                                 -fx-border-color: transparent;"/>
+            <VBox prefWidth="320" spacing="10" style="-fx-padding: 16; -fx-background-color: #131623;                          -fx-border-color: #2b3047; -fx-border-width: 0 1 0 0;">
+                <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #5dcaa5;" text="MY AUCTIONS" />
+                <ListView fx:id="myAuctionListView" style="-fx-background-color: transparent;                                  -fx-control-inner-background: transparent;                                  -fx-border-color: transparent;" VBox.vgrow="ALWAYS" />
             </VBox>
 
-            <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS"
-                        style="-fx-background: #0f1118; -fx-background-color: #0f1118;
-                               -fx-border-color: transparent;">
+            <ScrollPane fitToWidth="true" style="-fx-background: #0f1118; -fx-background-color: #0f1118;                                -fx-border-color: transparent;" HBox.hgrow="ALWAYS">
                 <VBox spacing="14" style="-fx-padding: 20;">
 
-                    <VBox spacing="12"
-                          style="-fx-background-color: #171a26; -fx-border-color: #2b3047;
-                                 -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12;
-                                 -fx-padding: 16;">
-                        <Label text="AUCTION FORM"
-                               style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #5dcaa5;"/>
+                    <VBox spacing="12" style="-fx-background-color: #171a26; -fx-border-color: #2b3047;                                  -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12;                                  -fx-padding: 16;">
+                        <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #5dcaa5;" text="AUCTION FORM" />
 
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="Type" prefWidth="120" style="-fx-text-fill: #92a0be;"/>
-                            <ChoiceBox fx:id="productTypeChoice" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label prefWidth="120" style="-fx-text-fill: #92a0be;" text="Type" />
+                            <ChoiceBox fx:id="productTypeChoice" maxWidth="Infinity" HBox.hgrow="ALWAYS" />
                         </HBox>
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="Title" prefWidth="120" style="-fx-text-fill: #92a0be;"/>
-                            <TextField fx:id="createTitleField" promptText="Auction title"
-                                       HBox.hgrow="ALWAYS"
-                                       style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                              -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                              -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label prefWidth="120" style="-fx-text-fill: #92a0be;" text="Title" />
+                            <TextField fx:id="createTitleField" promptText="Auction title" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                               -fx-border-color: #2b3047; -fx-border-radius: 8;                                               -fx-background-radius: 8; -fx-padding: 8 10;" HBox.hgrow="ALWAYS" />
                         </HBox>
-                        <HBox spacing="8" alignment="TOP_LEFT">
-                            <Label text="Description" prefWidth="120" style="-fx-text-fill: #92a0be;"/>
-                            <TextArea fx:id="createDescriptionArea" promptText="Product description"
-                                      prefRowCount="3" HBox.hgrow="ALWAYS"
-                                      style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                             -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                             -fx-background-radius: 8;"/>
+                        <HBox alignment="TOP_LEFT" spacing="8">
+                            <Label prefWidth="120" style="-fx-text-fill: #92a0be;" text="Description" />
+                            <TextArea fx:id="createDescriptionArea" prefRowCount="3" promptText="Product description" style="-fx-control-inner-background: #0d1019; -fx-background-color: #0d1019; -fx-text-fill: white; -fx-prompt-text-fill: #6d748c; -fx-border-color: #2b3047; -fx-border-radius: 8; -fx-background-radius: 8;" HBox.hgrow="ALWAYS" />
                         </HBox>
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="Category" prefWidth="120" style="-fx-text-fill: #92a0be;"/>
-                            <TextField fx:id="createCategoryField" promptText="e.g. Electronics"
-                                       HBox.hgrow="ALWAYS"
-                                       style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                              -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                              -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label prefWidth="120" style="-fx-text-fill: #92a0be;" text="Category" />
+                            <TextField fx:id="createCategoryField" promptText="e.g. Electronics" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                               -fx-border-color: #2b3047; -fx-border-radius: 8;                                               -fx-background-radius: 8; -fx-padding: 8 10;" HBox.hgrow="ALWAYS" />
                         </HBox>
-                        <HBox spacing="8" alignment="CENTER_LEFT">
-                            <Label text="Image hint" prefWidth="120" style="-fx-text-fill: #92a0be;"/>
-                            <TextField fx:id="createImageHintField" promptText="e.g. camera_closeup"
-                                       HBox.hgrow="ALWAYS"
-                                       style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                              -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                              -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label prefWidth="120" style="-fx-text-fill: #92a0be;" text="Image hint" />
+                            <TextField fx:id="createImageHintField" promptText="e.g. camera_closeup" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                               -fx-border-color: #2b3047; -fx-border-radius: 8;                                               -fx-background-radius: 8; -fx-padding: 8 10;" HBox.hgrow="ALWAYS" />
                         </HBox>
 
                         <HBox spacing="8">
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Opening price" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
-                                <TextField fx:id="createOpeningPriceField" promptText="0.00"
-                                           style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                                  -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                                  -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                                <Label style="-fx-font-size: 11px; -fx-text-fill: #92a0be;" text="Opening price" />
+                                <TextField fx:id="createOpeningPriceField" promptText="0.00" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                                   -fx-border-color: #2b3047; -fx-border-radius: 8;                                                   -fx-background-radius: 8; -fx-padding: 8 10;" />
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Reserve price" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
-                                <TextField fx:id="createReservePriceField" promptText="0.00"
-                                           style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                                  -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                                  -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                                <Label style="-fx-font-size: 11px; -fx-text-fill: #92a0be;" text="Reserve price" />
+                                <TextField fx:id="createReservePriceField" promptText="0.00" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                                   -fx-border-color: #2b3047; -fx-border-radius: 8;                                                   -fx-background-radius: 8; -fx-padding: 8 10;" />
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Increment" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
-                                <TextField fx:id="createIncrementField" promptText="0.00"
-                                           style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                                  -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                                  -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                                <Label style="-fx-font-size: 11px; -fx-text-fill: #92a0be;" text="Increment" />
+                                <TextField fx:id="createIncrementField" promptText="0.00" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                                   -fx-border-color: #2b3047; -fx-border-radius: 8;                                                   -fx-background-radius: 8; -fx-padding: 8 10;" />
                             </VBox>
                         </HBox>
 
                         <HBox spacing="8">
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Duration (min)" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
-                                <Spinner fx:id="durationSpinner"/>
+                                <Label style="-fx-font-size: 11px; -fx-text-fill: #92a0be;" text="Duration (min)" />
+                                <Spinner fx:id="durationSpinner" />
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label fx:id="secondaryFieldLabel" text="Warranty (months)" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
-                                <TextField fx:id="createSecondaryField" promptText="e.g. Samsung"
-                                           style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                                  -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                                  -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                                <Label fx:id="secondaryFieldLabel" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;" text="Warranty (months)" />
+                                <TextField fx:id="createSecondaryField" promptText="e.g. Samsung" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                                   -fx-border-color: #2b3047; -fx-border-radius: 8;                                                   -fx-background-radius: 8; -fx-padding: 8 10;" />
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label fx:id="tertiaryFieldLabel" text="Brand / Condition" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;"/>
-                                <TextField fx:id="createTertiaryField" promptText="e.g. Like new"
-                                           style="-fx-background-color: #0d1019; -fx-text-fill: white;
-                                                  -fx-border-color: #2b3047; -fx-border-radius: 8;
-                                                  -fx-background-radius: 8; -fx-padding: 8 10;"/>
+                                <Label fx:id="tertiaryFieldLabel" style="-fx-font-size: 11px; -fx-text-fill: #92a0be;" text="Brand / Condition" />
+                                <TextField fx:id="createTertiaryField" promptText="e.g. Like new" style="-fx-background-color: #0d1019; -fx-text-fill: white;                                                   -fx-border-color: #2b3047; -fx-border-radius: 8;                                                   -fx-background-radius: 8; -fx-padding: 8 10;" />
                             </VBox>
                         </HBox>
 
                         <HBox spacing="8">
-                            <Button text="Create" onAction="#createAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #5dcaa5; -fx-text-fill: #0f1b15;
-                                           -fx-font-weight: bold; -fx-background-radius: 10;
-                                           -fx-padding: 10; -fx-cursor: hand;"/>
-                            <Button text="Update" onAction="#updateAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #f0c040; -fx-text-fill: #1d1807;
-                                           -fx-font-weight: bold; -fx-background-radius: 10;
-                                           -fx-padding: 10; -fx-cursor: hand;"/>
-                            <Button text="Delete" onAction="#deleteAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #f09595; -fx-text-fill: #230b0b;
-                                           -fx-font-weight: bold; -fx-background-radius: 10;
-                                           -fx-padding: 10; -fx-cursor: hand;"/>
+                            <Button maxWidth="Infinity" onAction="#createAuction" style="-fx-background-color: #5dcaa5; -fx-text-fill: #0f1b15;                                            -fx-font-weight: bold; -fx-background-radius: 10;                                            -fx-padding: 10; -fx-cursor: hand;" text="Create" HBox.hgrow="ALWAYS" />
+                            <Button maxWidth="Infinity" onAction="#updateAuction" style="-fx-background-color: #f0c040; -fx-text-fill: #1d1807;                                            -fx-font-weight: bold; -fx-background-radius: 10;                                            -fx-padding: 10; -fx-cursor: hand;" text="Update" HBox.hgrow="ALWAYS" />
+                            <Button maxWidth="Infinity" onAction="#deleteAuction" style="-fx-background-color: #f09595; -fx-text-fill: #230b0b;                                            -fx-font-weight: bold; -fx-background-radius: 10;                                            -fx-padding: 10; -fx-cursor: hand;" text="Delete" HBox.hgrow="ALWAYS" />
                         </HBox>
 
                         <HBox spacing="8">
-                            <Button text="Start" onAction="#startAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #22362b; -fx-text-fill: #5dcaa5;
-                                           -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;"/>
-                            <Button text="Finish" onAction="#finishAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #252746; -fx-text-fill: #9a8cf8;
-                                           -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;"/>
-                            <Button text="Paid" onAction="#markAuctionPaid"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #3a2c14; -fx-text-fill: #f0c040;
-                                           -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;"/>
-                            <Button text="Cancel" onAction="#cancelAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #3a1e1e; -fx-text-fill: #f09595;
-                                           -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;"/>
+                            <Button maxWidth="Infinity" onAction="#startAuction" style="-fx-background-color: #22362b; -fx-text-fill: #5dcaa5;                                            -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;" text="Start" HBox.hgrow="ALWAYS" />
+                            <Button maxWidth="Infinity" onAction="#finishAuction" style="-fx-background-color: #252746; -fx-text-fill: #9a8cf8;                                            -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;" text="Finish" HBox.hgrow="ALWAYS" />
+                            <Button maxWidth="Infinity" onAction="#markAuctionPaid" style="-fx-background-color: #3a2c14; -fx-text-fill: #f0c040;                                            -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;" text="Paid" HBox.hgrow="ALWAYS" />
+                            <Button maxWidth="Infinity" onAction="#cancelAuction" style="-fx-background-color: #3a1e1e; -fx-text-fill: #f09595;                                            -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;" text="Cancel" HBox.hgrow="ALWAYS" />
                         </HBox>
                     </VBox>
 
-                    <VBox fx:id="adminPanel" spacing="10"
-                          style="-fx-background-color: #171a26; -fx-border-color: #f09595;
-                                 -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12;
-                                 -fx-padding: 16;">
-                        <Label text="ADMIN OVERRIDE"
-                               style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #f09595;"/>
+                    <VBox fx:id="adminPanel" spacing="10" style="-fx-background-color: #171a26; -fx-border-color: #f09595;                                  -fx-border-width: 1; -fx-border-radius: 12; -fx-background-radius: 12;                                  -fx-padding: 16;">
+                        <Label style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #f09595;" text="ADMIN OVERRIDE" />
                         <HBox spacing="8">
-                            <Button text="Force Finish" onAction="#finishAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #341b2f; -fx-text-fill: #f09595;
-                                           -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;"/>
-                            <Button text="Mark Paid" onAction="#markAuctionPaid"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #3a2c14; -fx-text-fill: #f0c040;
-                                           -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;"/>
-                            <Button text="Cancel" onAction="#cancelAuction"
-                                    HBox.hgrow="ALWAYS" maxWidth="Infinity"
-                                    style="-fx-background-color: #3a1e1e; -fx-text-fill: #f09595;
-                                           -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;"/>
+                            <Button maxWidth="Infinity" onAction="#finishAuction" style="-fx-background-color: #341b2f; -fx-text-fill: #f09595;                                            -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;" text="Force Finish" HBox.hgrow="ALWAYS" />
+                            <Button maxWidth="Infinity" onAction="#markAuctionPaid" style="-fx-background-color: #3a2c14; -fx-text-fill: #f0c040;                                            -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;" text="Mark Paid" HBox.hgrow="ALWAYS" />
+                            <Button maxWidth="Infinity" onAction="#cancelAuction" style="-fx-background-color: #3a1e1e; -fx-text-fill: #f09595;                                            -fx-background-radius: 10; -fx-padding: 9; -fx-cursor: hand;" text="Cancel" HBox.hgrow="ALWAYS" />
                         </HBox>
                     </VBox>
 
-                    <Label fx:id="actionStatusLabel" text="" wrapText="true"
-                           style="-fx-font-size: 12px; -fx-text-fill: #7c6af7;"/>
+                    <Label fx:id="actionStatusLabel" style="-fx-font-size: 12px; -fx-text-fill: #7c6af7;" text="" wrapText="true" />
                 </VBox>
             </ScrollPane>
         </HBox>
