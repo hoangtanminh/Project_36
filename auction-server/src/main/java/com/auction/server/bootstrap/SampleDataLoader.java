@@ -21,10 +21,10 @@ public final class SampleDataLoader {
     }
 
     public void load() {
-        Seller seller = new Seller("seller01", "Luna Store");
-        Bidder bidderOne = new Bidder("bidder01", "Mia Tran");
-        Bidder bidderTwo = new Bidder("bidder02", "Quang Le");
-        Admin admin = new Admin("admin01", "Ops Desk");
+        Seller seller = new Seller("seller01", "Luna Store", "seller01");
+        Bidder bidderOne = new Bidder("bidder01", "Mia Tran", "bidder01");
+        Bidder bidderTwo = new Bidder("bidder02", "Quang Le", "bidder02");
+        Admin admin = new Admin("admin01", "Ops Desk", "admin01");
 
         auctionService.seedUser(seller);
         auctionService.seedUser(bidderOne);
