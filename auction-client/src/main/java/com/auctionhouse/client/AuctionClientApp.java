@@ -38,7 +38,7 @@ public final class AuctionClientApp extends Application {
         if (configuredHost == null || configuredHost.isBlank()) {
             configuredHost = System.getenv("AUCTIONHOUSE_HOST");
         }
-        return configuredHost == null || configuredHost.isBlank() ? "localhost" : configuredHost.trim();
+        return configuredHost == null || configuredHost.isBlank() ? "192.168.2.108" : configuredHost.trim();
     }
 
     private int resolvePort() {
