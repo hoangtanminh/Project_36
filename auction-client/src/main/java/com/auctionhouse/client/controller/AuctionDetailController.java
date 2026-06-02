@@ -186,7 +186,6 @@ public final class AuctionDetailController {
             actionStatusLabel.setText(exception.getMessage());
         }
     }
-    // bảng vẽ giá thầu theo thời gian, hiển thị lịch sử giá thầu, cập nhật trạng thái và tương tác đặt giá thầu tự động
     private void configureView() {
         boolean bidder = currentUser.getRole() == UserRole.BIDDER;
         bidAmountField.setDisable(!bidder);
