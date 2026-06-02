@@ -33,8 +33,10 @@ public final class AuctionServerApplication {
         AuctionEventPublisher eventPublisher = new AuctionEventPublisher();
         AuctionViewMapper mapper = new AuctionViewMapper();
         AuctionService auctionService = new AuctionService(auctionDao, userDao, mapper, eventPublisher);
+        SampleDataLoader sampleDataLoader = new SampleDataLoader(auctionService);
+        sampleDataLoader.loadUsers();
         if (auctionDao.findAll().isEmpty()) {
-            new SampleDataLoader(auctionService).load();
+            sampleDataLoader.loadAuctions();
         }
         AuthenticationService authenticationService = new AuthenticationService(userDao);
         int requestedPort = resolveRequestedPort();

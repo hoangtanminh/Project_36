@@ -21,6 +21,11 @@ public final class SampleDataLoader {
     }
 
     public void load() {
+        loadUsers();
+        loadAuctions();
+    }
+
+    public void loadUsers() {
         Seller seller = new Seller("seller01", "Luna Store", "seller01");
         Bidder bidderOne = new Bidder("bidder01", "Mia Tran", "bidder01");
         Bidder bidderTwo = new Bidder("bidder02", "Quang Le", "bidder02");
@@ -30,7 +35,10 @@ public final class SampleDataLoader {
         auctionService.seedUser(bidderOne);
         auctionService.seedUser(bidderTwo);
         auctionService.seedUser(admin);
+    }
 
+    public void loadAuctions() {
+        Seller seller = new Seller("seller01", "Luna Store", "seller01");
         Item camera = new Electronics("I2001", "Sony Alpha A7 IV", "Mirrorless camera kit", 1250.0, 18);
         Auction runningAuction = new Auction("A1001", camera, LocalDateTime.now().minusMinutes(10), LocalDateTime.now().plusMinutes(90));
         auctionService.seedAuction(runningAuction, seller);
